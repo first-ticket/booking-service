@@ -3,7 +3,9 @@ spring:
     name: booking-service
 
   config:
-      import: "optional:configserver: "
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:configserver:"
 
   cloud:
     config:
