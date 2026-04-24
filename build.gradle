@@ -14,12 +14,30 @@ java {
     }
 }
 
+def env = [:]
+def envFile = rootProject.file(".env")
+if (envFile.exists()) {
+    envFile.eachLine { line ->
+        if (line && !line.startsWith("#") && line.contains("=")) {
+            def (key, value) = line.split("=", 2)
+            env[key.trim()] = value.trim().replaceAll(/^['"]|['"]$/, '')
+        }
+    }
+}
+
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://maven.pkg.github.com/first-ticket/common'
+        credentials {
+            username = env['GITHUB_USER']
+            password = env['GITHUB_TOKEN']
+        }
+    }
 }
 
 ext {
-    set('springCloudVersion', "2025.0.1")
+    set('springCloudVersion', "2025.0.2")
 }
 
 dependencies {
