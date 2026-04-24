@@ -1,5 +1,19 @@
 spring:
-    application:
-        name: booking-service
-server:
-  port: 8083
+  application:
+    name: booking-service
+
+  config:
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:configserver:"
+
+  cloud:
+    config:
+      username: ${CONFIG_SERVER_USERNAME}
+      password: ${CONFIG_SERVER_PASSWORD}
+      discovery:
+        enabled: true
+        service-id: config-server
+
+  profiles:
+    include: kafka
