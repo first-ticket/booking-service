@@ -1,10 +1,14 @@
 package com.firstticket.bookingservice.seat.domain;
 
+import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
+import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import com.firstticket.common.persistence.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,11 +47,21 @@ public class Seat extends BaseEntity {
     @Column(nullable = false)
     private int price;
 
-
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private SeatStatus status;
 
     public static Seat create(UUID scheduleId, SeatPosition position, int price) {
+        if (scheduleId == null) {
+            throw new SeatException(SeatErrorCode.INVALID_SEAT);
+        }
+        if (position == null) {
+            throw new SeatException(SeatErrorCode.INVALID_SEAT);
+        }
+        if (price < 0) {
+            throw new SeatException(SeatErrorCode.INVALID_SEAT_PRICE);
+        }
+
         return new Seat(
             SeatId.of(),
             scheduleId,

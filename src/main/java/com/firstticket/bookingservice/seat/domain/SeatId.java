@@ -5,12 +5,14 @@ import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import jakarta.persistence.Embeddable;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 @Embeddable
 public record SeatId(
     UUID id
-) {
+) implements Serializable {
+
     public SeatId {
         if (id == null) {
             throw new SeatException(SeatErrorCode.INVALID_SEAT_ID);
