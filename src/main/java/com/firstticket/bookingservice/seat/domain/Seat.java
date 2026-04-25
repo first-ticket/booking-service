@@ -1,0 +1,76 @@
+package com.firstticket.bookingservice.seat.domain;
+
+import com.firstticket.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
+/**
+ * 좌석 도메인
+ *
+ * 프로그램 회차별 예매 가능한 좌석을 나타내는 애그리거트 루트
+ * VenueSeat(공연장 고정 좌석)를 기반으로 스냅샷 방식으로 생성되며
+ * 이후 VenueSeat 변경에 영향을 받지 않고 독립적으로 관리된다
+ *
+ * 좌석 상태는 DB에서 AVAILABLE/RESERVED로 관리되며
+ * 선점 상태(HELD)는 Redis TTL로만 관리하고 DB에 저장하지 않는다
+ *
+ * 생성은 정적 팩토리 메서드 create()를 통해서만 가능하며
+ * 초기 상태는 항상 AVAILABLE이다
+ */
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class Seat extends BaseEntity {
+
+    @EmbeddedId
+    private SeatId id;
+
+    @Column(nullable = false)
+    private UUID scheduleId;
+
+    @Embedded
+    private SeatPosition position;
+
+    @Column(nullable = false)
+    private int price;
+
+
+    @Column(nullable = false)
+    private SeatStatus status;
+
+    public static Seat create(UUID scheduleId, SeatPosition position, int price) {
+        return new Seat(
+            SeatId.of(),
+            scheduleId,
+            position,
+            price,
+            SeatStatus.AVAILABLE
+        );
+    }
+
+    public void hold(UUID userId, String sessionId) {
+        // TODO: Redis 좌석 선점 등록
+    }
+
+    public void release() {
+        // TODO: Redis 좌석 선점 해제
+    }
+
+    public void reserve() {
+        // TODO: Redis 좌석 선점 해제
+        this.status = SeatStatus.RESERVED;
+    }
+
+    public boolean isAvailable() {
+        return this.status == SeatStatus.AVAILABLE;
+    }
+}
