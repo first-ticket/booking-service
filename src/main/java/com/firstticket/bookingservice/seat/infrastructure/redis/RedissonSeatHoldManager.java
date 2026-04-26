@@ -35,6 +35,7 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
     @Override
     public void hold(UUID scheduleId, List<SeatId> seatIds, UUID userId, String sessionId) {
         List<SeatId> heldSeatIds = new ArrayList<>();
+        String sessionRedisKey = null;
         try {
 
             for (SeatId seatId : seatIds) {
@@ -72,16 +73,22 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
 
             // 세션별 선점 목록 등록: session:{sessionId}:{scheduleId} = [seatIds] (TTL 10분)
             // 세션 만료 또는 예매 취소 시 선점 좌석 일괄 해제에 사용
-            String sessionKey = sessionKey(sessionId, scheduleId);
-            RList<String> sessionList = redissonClient.getList(sessionKey);
+            sessionRedisKey = sessionKey(sessionId, scheduleId);
+            RList<String> sessionList = redissonClient.getList(sessionRedisKey);
             seatIds.forEach(seatId -> sessionList.add(seatId.id().toString()));
             sessionList.expire(Duration.ofMinutes(HOLD_TTL_MINUTES));
         } catch (SeatException e) {
             // 좌석 하나라도 선점 실패 시 모두 선점 해제 (롤백)
             heldSeatIds.forEach(this::release);
+            if (sessionRedisKey != null) {
+                redissonClient.getList(sessionRedisKey).delete();
+            }
             throw e;
         } catch (RuntimeException e) {
             heldSeatIds.forEach(this::release);
+            if (sessionRedisKey != null) {
+                redissonClient.getList(sessionRedisKey).delete();
+            }
             throw e;
         }
     }
