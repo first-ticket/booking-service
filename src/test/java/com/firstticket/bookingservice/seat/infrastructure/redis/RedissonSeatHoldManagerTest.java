@@ -17,6 +17,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -138,8 +139,8 @@ public class RedissonSeatHoldManagerTest {
         String sessionId1 = UUID.randomUUID().toString();
         String sessionId2 = UUID.randomUUID().toString();
 
-        int[] successCount = {0};
-        int[] failCount = {0};
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failCount = new AtomicInteger(0);
 
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -147,10 +148,10 @@ public class RedissonSeatHoldManagerTest {
             try {
                 latch.await(); // 신호 대기
                 seatHoldManager.hold(scheduleId, seatIds, userId1, sessionId1);
-                successCount[0]++;
+                successCount.incrementAndGet();
             } catch (SeatException e) {
                 if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED) {
-                    failCount[0]++;
+                    failCount.incrementAndGet();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -161,10 +162,10 @@ public class RedissonSeatHoldManagerTest {
             try {
                 latch.await(); // 신호 대기
                 seatHoldManager.hold(scheduleId, seatIds, userId2, sessionId2);
-                successCount[0]++;
+                successCount.incrementAndGet();
             } catch (SeatException e) {
                 if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED) {
-                    failCount[0]++;
+                    failCount.incrementAndGet();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -177,7 +178,7 @@ public class RedissonSeatHoldManagerTest {
         t1.join();
         t2.join();
 
-        assertThat(successCount[0]).isEqualTo(1);
-        assertThat(failCount[0]).isEqualTo(1);
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(failCount.get()).isEqualTo(1);
     }
 }

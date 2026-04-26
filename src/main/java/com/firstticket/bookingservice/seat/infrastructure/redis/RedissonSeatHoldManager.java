@@ -80,6 +80,9 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
             // 좌석 하나라도 선점 실패 시 모두 선점 해제 (롤백)
             heldSeatIds.forEach(this::release);
             throw e;
+        } catch (RuntimeException e) {
+            heldSeatIds.forEach(this::release);
+            throw e;
         }
     }
 
@@ -89,7 +92,13 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
      */
     @Override
     public void releaseAll(UUID scheduleId, List<SeatId> seatIds, String sessionId) {
-        seatIds.forEach(this::release);
+        for (SeatId seatId : seatIds) {
+            RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
+            String value = holdBucket.get();
+            if (value != null && value.contains(sessionId)) {
+                holdBucket.delete();
+            }
+        }
         redissonClient.getBucket(sessionKey(sessionId, scheduleId)).delete();
     }
 
