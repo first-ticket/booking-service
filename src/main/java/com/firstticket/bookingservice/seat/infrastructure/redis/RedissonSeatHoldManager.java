@@ -23,7 +23,6 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
 
     private static final long HOLD_TTL_MINUTES = 10; // 좌석 선점 유지 시간: 10분
     private static final long LOCK_WAIT_SECONDS = 0; // 락 획득 대기 시간: 0초 -> 락 획득 실패 시 즉시 실패
-    private static final long LOCK_LEASE_SECONDS = 1; // 락 유지 시간: 1초
 
     private final RedissonClient redissonClient;
 
@@ -45,8 +44,8 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
                 RLock lock = redissonClient.getLock(lockKey);
                 try {
 
-                    // 분산락 획득 시도: 동시에 같은 좌석을 접근하는 요청을 직렬화
-                    if (!lock.tryLock(LOCK_WAIT_SECONDS, LOCK_LEASE_SECONDS, TimeUnit.SECONDS)) {
+                    // 분산락 획득 시도: 즉시 실패, leaseTime=-1로 watchdog 활성화 (락 자동 갱신)
+                    if (!lock.tryLock(LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS)) {
                         throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
                     }
 
