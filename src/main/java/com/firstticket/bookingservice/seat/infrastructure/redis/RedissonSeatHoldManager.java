@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class RedissonSeatHoldManager implements SeatHoldManager {
 
-    private static final long HOLD_TTL_MINUTES = 10; // 좌석 선점 유지 시간: 10분
-    private static final long HOLD_LOCK_WAIT_SECONDS = 0; // 선점 락 획득 대기 시간: 0초 -> 락 획득 실패 시 즉시 실패
-    private static final long RELEASE_LOCK_WAIT_SECONDS = 3; // 선점 해제 락 대기 시간: 3초
+    private static final long HOLD_TTL_MINUTES = 10;
+    private static final long HOLD_LOCK_WAIT_SECONDS = 0;
+    private static final long RELEASE_LOCK_WAIT_SECONDS = 3;
 
     private final RedissonClient redissonClient;
 
@@ -50,7 +50,9 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
             String existingSessionId = userHoldBucket.get();
             if (existingSessionId != null) {
                 List<SeatId> existingSeatIds = getHeldSeatIds(existingSessionId);
-                releaseAll(existingSeatIds, scheduleId, userId, existingSessionId);
+                if (!releaseAll(existingSeatIds, scheduleId, userId, existingSessionId)) {
+                    throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
+                }
             }
 
             List<SeatId> heldSeatIds = new ArrayList<>();
@@ -91,7 +93,8 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
                 userHoldBucket.set(sessionId, Duration.ofMinutes(HOLD_TTL_MINUTES));
 
             } catch (RuntimeException e) {
-                heldSeatIds.forEach(this::release);
+                String expectedOwner = userId + ":" + sessionId;
+                heldSeatIds.forEach(seatId -> releaseIfOwned(seatId, expectedOwner));
                 sessionList.delete();
                 throw e;
             }
@@ -108,15 +111,15 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
     /**
      * 세션에서 선점 중인 좌석 모두 해제
      * holdKey를 삭제하여 각 좌석을 선점 가능 상태로 돌리고 sessionKey, userHoldKey도 함께 삭제
+     * 부분 해제 실패 시 false 발생 (예외 발생 X)
      */
     @Override
-    public void releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
+    public boolean releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         boolean allReleased = true;
         for (SeatId seatId : seatIds) {
             RLock lock = redissonClient.getLock(lockKey(seatId));
             boolean locked = false;
             try {
-                // 분산락 획득 시도: 3초 대기
                 locked = lock.tryLock(RELEASE_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS);
                 if (!locked) {
                     allReleased = false;
@@ -140,7 +143,7 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
 
         if (!allReleased) {
             log.warn("일부 좌석 선점 해제 실패. sessionId: {}", sessionId);
-            return;
+            return false;
         }
 
         redissonClient.getList(sessionKey(sessionId)).delete();
@@ -148,6 +151,7 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
         if (sessionId.equals(userHoldBucket.get())) {
             userHoldBucket.delete();
         }
+        return true;
     }
 
     /**
@@ -178,9 +182,27 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
             .toList();
     }
 
-    // 내부용 단건 선점 해제
-    private void release(SeatId seatId) {
-        redissonClient.getBucket(holdKey(seatId)).delete();
+    // 내부용 단건 선점 해제 (소유권 확인 후 삭제)
+    private void releaseIfOwned(SeatId seatId, String expectedOwner) {
+        RLock lock = redissonClient.getLock(lockKey(seatId));
+        boolean locked = false;
+        try {
+            locked = lock.tryLock(RELEASE_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS);
+            if (!locked) {
+                return;
+            }
+            RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
+            if (expectedOwner.equals(holdBucket.get())) {
+                holdBucket.delete();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("좌석 선점 롤백 중 인터럽트 발생. seatId: {}", seatId.id());
+        } finally {
+            if (locked && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
     }
 
     // lock:{seatId} - 분산락 키

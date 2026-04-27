@@ -9,7 +9,7 @@ public interface SeatHoldManager {
 
     void hold(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId);
 
-    void releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId);
+    boolean releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId);
 
     boolean isHeld(List<SeatId> seatIds, UUID userId, String sessionId);
 
