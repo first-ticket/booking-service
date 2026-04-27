@@ -5,6 +5,7 @@ import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import com.firstticket.bookingservice.seat.domain.service.SeatHoldManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
 import org.redisson.api.RList;
 import org.redisson.api.RLock;
@@ -17,12 +18,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RedissonSeatHoldManager implements SeatHoldManager {
 
     private static final long HOLD_TTL_MINUTES = 10; // 좌석 선점 유지 시간: 10분
-    private static final long LOCK_WAIT_SECONDS = 0; // 락 획득 대기 시간: 0초 -> 락 획득 실패 시 즉시 실패
+    private static final long HOLD_LOCK_WAIT_SECONDS = 0; // 선점 락 획득 대기 시간: 0초 -> 락 획득 실패 시 즉시 실패
+    private static final long RELEASE_LOCK_WAIT_SECONDS = 3; // 선점 해제 락 대기 시간: 3초
 
     private final RedissonClient redissonClient;
 
@@ -49,7 +52,7 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
                 RLock lock = redissonClient.getLock(lockKey(seatId));
                 try {
                     // 분산락 획득 시도: 즉시 실패, leaseTime=-1로 watchdog 활성화 (락 자동 갱신)
-                    if (!lock.tryLock(LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS)) {
+                    if (!lock.tryLock(HOLD_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS)) {
                         throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
                     }
 
@@ -94,14 +97,33 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
     @Override
     public void releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         for (SeatId seatId : seatIds) {
-            RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
-            String value = holdBucket.get();
-            if (value != null && value.equals(userId + ":" + sessionId)) {
-                holdBucket.delete();
+            RLock lock = redissonClient.getLock(lockKey(seatId));
+            boolean locked = false;
+            try {
+                // 분산락 획득 시도: 3초 대기
+                locked = lock.tryLock(RELEASE_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS);
+                if (!locked) {
+                    continue;
+                }
+                RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
+                String value = holdBucket.get();
+                if ((userId + ":" + sessionId).equals(value)) {
+                    holdBucket.delete();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("좌석 선점 해제 중 인터럽트 발생. seatId: {}", seatId.id());
+            } finally {
+                if (locked && lock.isHeldByCurrentThread()) {
+                    lock.unlock();
+                }
             }
         }
         redissonClient.getList(sessionKey(sessionId)).delete();
-        redissonClient.getBucket(userHoldKey(userId, scheduleId)).delete();
+        RBucket<String> userHoldBucket = redissonClient.getBucket(userHoldKey(userId, scheduleId));
+        if (sessionId.equals(userHoldBucket.get())) {
+            userHoldBucket.delete();
+        }
     }
 
     /**
