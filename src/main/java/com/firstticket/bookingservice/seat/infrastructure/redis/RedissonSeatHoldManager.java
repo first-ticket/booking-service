@@ -28,30 +28,33 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
 
     /**
      * 여러 좌석을 한번에 선점
-     * - 좌석마다 개별 분산락을 획등하여 동시 선점을 방지
+     * - 기존 선점이 있으면 먼저 해제 후 새로 선점
+     * - 좌석마다 개별 분산락을 획득하여 동시 선점을 방지
      * - 하나라도 실패하면 이미 선점된 좌석을 모두 롤백 후 선점 실패 예외 발행
      */
     @Override
-    public void hold(UUID scheduleId, List<SeatId> seatIds, UUID userId, String sessionId) {
+    public void hold(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
+        // 기존 선점이 있으면 해제
+        RBucket<String> userHoldBucket = redissonClient.getBucket(userHoldKey(userId, scheduleId));
+        String existingSessionId = userHoldBucket.get();
+        if (existingSessionId != null) {
+            List<SeatId> existingSeatIds = getHeldSeatIds(existingSessionId);
+            releaseAll(existingSeatIds, scheduleId, userId, existingSessionId);
+        }
+
         List<SeatId> heldSeatIds = new ArrayList<>();
-        String sessionRedisKey = null;
+        RList<String> sessionList = redissonClient.getList(sessionKey(sessionId));
         try {
-
             for (SeatId seatId : seatIds) {
-                String lockKey = lockKey(seatId);
-                String holdKey = holdKey(seatId);
-
-                RLock lock = redissonClient.getLock(lockKey);
+                RLock lock = redissonClient.getLock(lockKey(seatId));
                 try {
-
                     // 분산락 획득 시도: 즉시 실패, leaseTime=-1로 watchdog 활성화 (락 자동 갱신)
                     if (!lock.tryLock(LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS)) {
                         throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
                     }
 
-                    // Redis에서 선점 여부 확인
-                    // 선점하려는 좌석으로 생성된 holdKey의 TTL이 살아있다면 선점 중
-                    RBucket<String> holdBucket = redissonClient.getBucket(holdKey);
+                    // 선점 여부 확인
+                    RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
                     if (holdBucket.isExists()) {
                         throw new SeatException(SeatErrorCode.SEAT_ALREADY_HELD);
                     }
@@ -70,47 +73,40 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
                 }
             }
 
-            // 세션별 선점 목록 등록: session:{sessionId}:{scheduleId} = [seatIds] (TTL 10분)
-            // 세션 만료 또는 예매 취소 시 선점 좌석 일괄 해제에 사용
-            sessionRedisKey = sessionKey(sessionId, scheduleId);
-            RList<String> sessionList = redissonClient.getList(sessionRedisKey);
+            // 세션별 선점 목록 등록: session:{sessionId} = [seatIds] (TTL 10분)
             seatIds.forEach(seatId -> sessionList.add(seatId.id().toString()));
             sessionList.expire(Duration.ofMinutes(HOLD_TTL_MINUTES));
-        } catch (SeatException e) {
-            // 좌석 하나라도 선점 실패 시 모두 선점 해제 (롤백)
-            heldSeatIds.forEach(this::release);
-            if (sessionRedisKey != null) {
-                redissonClient.getList(sessionRedisKey).delete();
-            }
-            throw e;
+
+            // 유저 활성 선점 등록: user-hold:{userId}:{scheduleId} = sessionId (TTL 10분)
+            userHoldBucket.set(sessionId, Duration.ofMinutes(HOLD_TTL_MINUTES));
+
         } catch (RuntimeException e) {
             heldSeatIds.forEach(this::release);
-            if (sessionRedisKey != null) {
-                redissonClient.getList(sessionRedisKey).delete();
-            }
+            sessionList.delete();
             throw e;
         }
     }
 
     /**
      * 세션에서 선점 중인 좌석 모두 해제
-     * holdKey를 삭제하여 각 좌석을 선점 가능 상태로 돌리고 sessionKey도 함께 삭제
+     * holdKey를 삭제하여 각 좌석을 선점 가능 상태로 돌리고 sessionKey, userHoldKey도 함께 삭제
      */
     @Override
-    public void releaseAll(UUID scheduleId, List<SeatId> seatIds, String sessionId) {
+    public void releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         for (SeatId seatId : seatIds) {
             RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
             String value = holdBucket.get();
-            if (value != null && value.contains(sessionId)) {
+            if (value != null && value.equals(userId + ":" + sessionId)) {
                 holdBucket.delete();
             }
         }
-        redissonClient.getBucket(sessionKey(sessionId, scheduleId)).delete();
+        redissonClient.getList(sessionKey(sessionId)).delete();
+        redissonClient.getBucket(userHoldKey(userId, scheduleId)).delete();
     }
 
     /**
      * 선점 중인 좌석이 요청한 사용자의 것인지 확인
-     * held:{seatId}에 저장된 userId:sessionId와 요청한 userId:sessionId와 일치하는지 검증
+     * held:{seatId}에 저장된 userId:sessionId와 요청한 userId:sessionId가 일치하는지 검증
      */
     @Override
     public boolean isHeld(List<SeatId> seatIds, UUID userId, String sessionId) {
@@ -125,12 +121,12 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
     }
 
     /**
-     * 세션에서 선점중인 좌석 ID 목록 조회
-     * session:{sessionId}:{scheduleId} 키에서 seatId 목록을 반환
+     * 세션에서 선점 중인 좌석 ID 목록 조회
+     * session:{sessionId} 키에서 seatId 목록을 반환
      */
     @Override
-    public List<SeatId> getHeldSeatIds(String sessionId, UUID scheduleId) {
-        RList<String> sessionList = redissonClient.getList(sessionKey(sessionId, scheduleId));
+    public List<SeatId> getHeldSeatIds(String sessionId) {
+        RList<String> sessionList = redissonClient.getList(sessionKey(sessionId));
         return sessionList.stream()
             .map(id -> SeatId.of(UUID.fromString(id)))
             .toList();
@@ -151,9 +147,13 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
         return "held:" + seatId.id();
     }
 
-    // session:{sessionId}:{scheduleId} - 세션별 선점 목록 키
-    private String sessionKey(String sessionId, UUID scheduleId) {
-        return "session:" + sessionId + ":" + scheduleId;
+    // session:{sessionId} - 세션별 선점 목록 키
+    private String sessionKey(String sessionId) {
+        return "session:" + sessionId;
     }
 
+    // user-hold:{userId}:{scheduleId} - 유저 활성 선점 키
+    private String userHoldKey(UUID userId, UUID scheduleId) {
+        return "user-hold:" + userId + ":" + scheduleId;
+    }
 }

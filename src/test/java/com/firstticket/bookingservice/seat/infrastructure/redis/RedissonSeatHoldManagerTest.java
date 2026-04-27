@@ -46,8 +46,8 @@ public class RedissonSeatHoldManagerTest {
 
     @AfterEach
     void tearDown() {
-        // 테스트 후 Redis 데이터 초기화
-        seatHoldManager.releaseAll(scheduleId, List.of(), sessionId);
+        List<SeatId> heldSeatIds = seatHoldManager.getHeldSeatIds(sessionId);
+        seatHoldManager.releaseAll(heldSeatIds, scheduleId, userId, sessionId);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class RedissonSeatHoldManagerTest {
     void hold_success() {
         List<SeatId> seatIds = List.of(SeatId.of(), SeatId.of());
 
-        seatHoldManager.hold(scheduleId, seatIds, userId, sessionId);
+        seatHoldManager.hold(seatIds, scheduleId, userId, sessionId);
 
         assertThat(seatHoldManager.isHeld(seatIds, userId, sessionId)).isTrue();
     }
@@ -66,10 +66,10 @@ public class RedissonSeatHoldManagerTest {
         SeatId seatId = SeatId.of();
         List<SeatId> seatIds = List.of(seatId);
 
-        seatHoldManager.hold(scheduleId, seatIds, userId, sessionId);
+        seatHoldManager.hold(seatIds, scheduleId, userId, sessionId);
 
         assertThatThrownBy(() ->
-            seatHoldManager.hold(scheduleId, seatIds, UUID.randomUUID(), UUID.randomUUID().toString())
+            seatHoldManager.hold(seatIds, scheduleId, UUID.randomUUID(), UUID.randomUUID().toString())
         )
             .isInstanceOf(SeatException.class)
             .satisfies(e -> assertThat(((SeatException) e).getErrorCode())
@@ -83,16 +83,15 @@ public class RedissonSeatHoldManagerTest {
         SeatId newSeat = SeatId.of();
 
         // alreadyHeldSeat 선점
-        seatHoldManager.hold(scheduleId, List.of(alreadyHeldSeat), UUID.randomUUID(), UUID.randomUUID().toString());
+        seatHoldManager.hold(List.of(alreadyHeldSeat), scheduleId, UUID.randomUUID(), UUID.randomUUID().toString());
 
         // newSeat + alreadyHeldSeat 동시 선점 시도 시 실패
         assertThatThrownBy(() ->
-            seatHoldManager.hold(scheduleId, List.of(alreadyHeldSeat, newSeat), userId, sessionId)
+            seatHoldManager.hold(List.of(newSeat, alreadyHeldSeat), scheduleId, userId, sessionId)
         ).isInstanceOf(SeatException.class);
 
         // newSeat 롤백 확인
-        assertThat(seatHoldManager.isHeld(List.of(newSeat), userId, sessionId))
-            .isFalse();
+        assertThat(seatHoldManager.isHeld(List.of(newSeat), userId, sessionId)).isFalse();
     }
 
     @Test
@@ -100,8 +99,8 @@ public class RedissonSeatHoldManagerTest {
     void releaseAll_success() {
         List<SeatId> seatIds = List.of(SeatId.of(), SeatId.of());
 
-        seatHoldManager.hold(scheduleId, seatIds, userId, sessionId);
-        seatHoldManager.releaseAll(scheduleId, seatIds, sessionId);
+        seatHoldManager.hold(seatIds, scheduleId, userId, sessionId);
+        seatHoldManager.releaseAll(seatIds, scheduleId, userId, sessionId);
 
         assertThat(seatHoldManager.isHeld(seatIds, userId, sessionId)).isFalse();
     }
@@ -111,9 +110,9 @@ public class RedissonSeatHoldManagerTest {
     void getHeldSeatIds_success() {
         List<SeatId> seatIds = List.of(SeatId.of(), SeatId.of());
 
-        seatHoldManager.hold(scheduleId, seatIds, userId, sessionId);
+        seatHoldManager.hold(seatIds, scheduleId, userId, sessionId);
 
-        List<SeatId> heldSeatIds = seatHoldManager.getHeldSeatIds(sessionId, scheduleId);
+        List<SeatId> heldSeatIds = seatHoldManager.getHeldSeatIds(sessionId);
         assertThat(heldSeatIds).containsExactlyInAnyOrderElementsOf(seatIds);
     }
 
@@ -122,10 +121,25 @@ public class RedissonSeatHoldManagerTest {
     void isHeld_wrongUser() {
         List<SeatId> seatIds = List.of(SeatId.of());
 
-        seatHoldManager.hold(scheduleId, seatIds, userId, sessionId);
+        seatHoldManager.hold(seatIds, scheduleId, userId, sessionId);
 
-        assertThat(seatHoldManager.isHeld(seatIds, UUID.randomUUID(), UUID.randomUUID().toString()))
-            .isFalse();
+        assertThat(seatHoldManager.isHeld(seatIds, UUID.randomUUID(), UUID.randomUUID().toString())).isFalse();
+    }
+
+    @Test
+    @DisplayName("같은 유저가 동일 스케줄에 새로 선점 시도 시 기존 선점 해제")
+    void hold_releasePreviousHold() {
+        SeatId oldSeat = SeatId.of();
+        SeatId newSeat = SeatId.of();
+        String newSessionId = UUID.randomUUID().toString();
+
+        seatHoldManager.hold(List.of(oldSeat), scheduleId, userId, sessionId);
+        seatHoldManager.hold(List.of(newSeat), scheduleId, userId, newSessionId);
+
+        // 기존 선점 해제 확인
+        assertThat(seatHoldManager.isHeld(List.of(oldSeat), userId, sessionId)).isFalse();
+        // 새 선점 확인
+        assertThat(seatHoldManager.isHeld(List.of(newSeat), userId, newSessionId)).isTrue();
     }
 
     @Test
@@ -146,8 +160,8 @@ public class RedissonSeatHoldManagerTest {
 
         Thread t1 = new Thread(() -> {
             try {
-                latch.await(); // 신호 대기
-                seatHoldManager.hold(scheduleId, seatIds, userId1, sessionId1);
+                latch.await();
+                seatHoldManager.hold(seatIds, scheduleId, userId1, sessionId1);
                 successCount.incrementAndGet();
             } catch (SeatException e) {
                 if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED) {
@@ -160,8 +174,8 @@ public class RedissonSeatHoldManagerTest {
 
         Thread t2 = new Thread(() -> {
             try {
-                latch.await(); // 신호 대기
-                seatHoldManager.hold(scheduleId, seatIds, userId2, sessionId2);
+                latch.await();
+                seatHoldManager.hold(seatIds, scheduleId, userId2, sessionId2);
                 successCount.incrementAndGet();
             } catch (SeatException e) {
                 if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED) {
