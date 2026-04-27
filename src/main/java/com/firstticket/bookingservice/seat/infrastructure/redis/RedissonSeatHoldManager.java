@@ -37,56 +37,71 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
      */
     @Override
     public void hold(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
-        // 기존 선점이 있으면 해제
-        RBucket<String> userHoldBucket = redissonClient.getBucket(userHoldKey(userId, scheduleId));
-        String existingSessionId = userHoldBucket.get();
-        if (existingSessionId != null) {
-            List<SeatId> existingSeatIds = getHeldSeatIds(existingSessionId);
-            releaseAll(existingSeatIds, scheduleId, userId, existingSessionId);
-        }
-
-        List<SeatId> heldSeatIds = new ArrayList<>();
-        RList<String> sessionList = redissonClient.getList(sessionKey(sessionId));
+        RLock userLock = redissonClient.getLock("lock:user-hold:" + userId + ":" + scheduleId);
+        boolean userLocked = false;
         try {
-            for (SeatId seatId : seatIds) {
-                RLock lock = redissonClient.getLock(lockKey(seatId));
-                try {
-                    // 분산락 획득 시도: 즉시 실패, leaseTime=-1로 watchdog 활성화 (락 자동 갱신)
-                    if (!lock.tryLock(HOLD_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS)) {
-                        throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
-                    }
-
-                    // 선점 여부 확인
-                    RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
-                    if (holdBucket.isExists()) {
-                        throw new SeatException(SeatErrorCode.SEAT_ALREADY_HELD);
-                    }
-
-                    // 선점 등록: held:{seatId} = userId:sessionId (TTL 10분)
-                    holdBucket.set(userId + ":" + sessionId, Duration.ofMinutes(HOLD_TTL_MINUTES));
-                    heldSeatIds.add(seatId);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
-                } finally {
-                    // 락은 반드시 해제 (성공/실패 모두)
-                    if (lock.isHeldByCurrentThread()) {
-                        lock.unlock();
-                    }
-                }
+            userLocked = userLock.tryLock(HOLD_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS);
+            if (!userLocked) {
+                throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
             }
 
-            // 세션별 선점 목록 등록: session:{sessionId} = [seatIds] (TTL 10분)
-            seatIds.forEach(seatId -> sessionList.add(seatId.id().toString()));
-            sessionList.expire(Duration.ofMinutes(HOLD_TTL_MINUTES));
+            // 기존 선점이 있으면 해제
+            RBucket<String> userHoldBucket = redissonClient.getBucket(userHoldKey(userId, scheduleId));
+            String existingSessionId = userHoldBucket.get();
+            if (existingSessionId != null) {
+                List<SeatId> existingSeatIds = getHeldSeatIds(existingSessionId);
+                releaseAll(existingSeatIds, scheduleId, userId, existingSessionId);
+            }
 
-            // 유저 활성 선점 등록: user-hold:{userId}:{scheduleId} = sessionId (TTL 10분)
-            userHoldBucket.set(sessionId, Duration.ofMinutes(HOLD_TTL_MINUTES));
+            List<SeatId> heldSeatIds = new ArrayList<>();
+            RList<String> sessionList = redissonClient.getList(sessionKey(sessionId));
+            try {
+                for (SeatId seatId : seatIds) {
+                    RLock lock = redissonClient.getLock(lockKey(seatId));
+                    try {
+                        // 분산락 획득 시도: 즉시 실패, leaseTime=-1로 watchdog 활성화 (락 자동 갱신)
+                        if (!lock.tryLock(HOLD_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS)) {
+                            throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
+                        }
 
-        } catch (RuntimeException e) {
-            heldSeatIds.forEach(this::release);
-            sessionList.delete();
-            throw e;
+                        // 선점 여부 확인
+                        RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
+                        if (holdBucket.isExists()) {
+                            throw new SeatException(SeatErrorCode.SEAT_ALREADY_HELD);
+                        }
+
+                        // 선점 등록: held:{seatId} = userId:sessionId (TTL 10분)
+                        holdBucket.set(userId + ":" + sessionId, Duration.ofMinutes(HOLD_TTL_MINUTES));
+                        heldSeatIds.add(seatId);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
+                    } finally {
+                        if (lock.isHeldByCurrentThread()) {
+                            lock.unlock();
+                        }
+                    }
+                }
+
+                // 세션별 선점 목록 등록: session:{sessionId} = [seatIds] (TTL 10분)
+                seatIds.forEach(seatId -> sessionList.add(seatId.id().toString()));
+                sessionList.expire(Duration.ofMinutes(HOLD_TTL_MINUTES));
+
+                // 유저 활성 선점 등록: user-hold:{userId}:{scheduleId} = sessionId (TTL 10분)
+                userHoldBucket.set(sessionId, Duration.ofMinutes(HOLD_TTL_MINUTES));
+
+            } catch (RuntimeException e) {
+                heldSeatIds.forEach(this::release);
+                sessionList.delete();
+                throw e;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SeatException(SeatErrorCode.SEAT_HOLD_FAILED);
+        } finally {
+            if (userLocked && userLock.isHeldByCurrentThread()) {
+                userLock.unlock();
+            }
         }
     }
 
@@ -96,6 +111,7 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
      */
     @Override
     public void releaseAll(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
+        boolean allReleased = true;
         for (SeatId seatId : seatIds) {
             RLock lock = redissonClient.getLock(lockKey(seatId));
             boolean locked = false;
@@ -103,6 +119,7 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
                 // 분산락 획득 시도: 3초 대기
                 locked = lock.tryLock(RELEASE_LOCK_WAIT_SECONDS, -1, TimeUnit.SECONDS);
                 if (!locked) {
+                    allReleased = false;
                     continue;
                 }
                 RBucket<String> holdBucket = redissonClient.getBucket(holdKey(seatId));
@@ -113,12 +130,19 @@ public class RedissonSeatHoldManager implements SeatHoldManager {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("좌석 선점 해제 중 인터럽트 발생. seatId: {}", seatId.id());
+                allReleased = false;
             } finally {
                 if (locked && lock.isHeldByCurrentThread()) {
                     lock.unlock();
                 }
             }
         }
+
+        if (!allReleased) {
+            log.warn("일부 좌석 선점 해제 실패. sessionId: {}", sessionId);
+            return;
+        }
+
         redissonClient.getList(sessionKey(sessionId)).delete();
         RBucket<String> userHoldBucket = redissonClient.getBucket(userHoldKey(userId, scheduleId));
         if (sessionId.equals(userHoldBucket.get())) {
