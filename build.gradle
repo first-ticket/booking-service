@@ -81,6 +81,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
+    implementation 'org.redisson:redisson-spring-boot-starter:4.3.0'
+
 //    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
 //    implementation 'io.opentelemetry.exporter:opentelemetry-exporter-otlp'
 
@@ -90,6 +92,9 @@ dependencies {
     runtimeOnly 'com.h2database:h2' // 초기 빌드용
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
