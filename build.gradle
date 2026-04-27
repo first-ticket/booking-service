@@ -35,14 +35,24 @@ if (!githubUser || !githubToken) {
 repositories {
     mavenCentral()
     maven {
-        name = 'GitHubPackages'
-        url = 'https://maven.pkg.github.com/first-ticket/*'
-        mavenContent {
-            includeGroup 'com.first-ticket'
-        }
+        url = 'https://maven.pkg.github.com/first-ticket/common'
         credentials {
-            username = env['GITHUB_USER']
-            password = env['GITHUB_TOKEN']
+            username = githubUser
+            password = githubToken
+        }
+    }
+    maven {
+        url = 'https://maven.pkg.github.com/first-ticket/common-jpa'
+        credentials {
+            username = githubUser
+            password = githubToken
+        }
+    }
+    maven {
+        url = 'https://maven.pkg.github.com/first-ticket/common-messaging'
+        credentials {
+            username = githubUser
+            password = githubToken
         }
     }
 }
