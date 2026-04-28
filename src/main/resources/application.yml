@@ -26,6 +26,6 @@ spring:
 # 예매 입장, 세션 토큰 -> 추후 컨피그 서버로 옮길 예정
 booking:
   token:
-    entry-secret:
-    session-secret:
-    session-token-validity:
+    entry-secret: ${BOOKING_ENTRY_SECRET}
+    session-secret: ${BOOKING_SESSION_SECRET}
+    session-token-validity: ${BOOKING_SESSION_TOKEN_VALIDITY:30m}

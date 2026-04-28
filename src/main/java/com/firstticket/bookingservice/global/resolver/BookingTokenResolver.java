@@ -53,7 +53,12 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
         if(pathVariables == null || pathVariables.get("programId") == null) {
             throw new BookingException(BookingErrorCode.EMPTY_PATHVARIABLE);
         }
-        UUID programId = UUID.fromString(pathVariables.get("programId"));
+        UUID programId;
+        try {
+            programId = UUID.fromString(pathVariables.get("programId"));
+        } catch (IllegalArgumentException e) {
+            throw new BookingException(BookingErrorCode.INVALID_PROGRAM_ID);
+        }
 
 
         // 1. 세션 토큰 확인 (우선순위 높음)
@@ -63,9 +68,14 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
             // 세션 토큰 전용 시크릿으로 검증 후 반환
             BookingTokenClaims sessionTokenClaims = tokenProvider.validateSessionToken(token);
 
+            UUID userId;
+            try {
+                userId = UUID.fromString(xUserId);
+            } catch (IllegalArgumentException e) {
+                throw new BookingException(BookingErrorCode.INVALID_USER_ID);
+            }
 
-
-            if(!sessionTokenClaims.userId().equals(UUID.fromString(xUserId))){
+            if(!sessionTokenClaims.userId().equals(userId)){
                 throw new BookingException(BookingErrorCode.INVALID_USER_ID);
             }
 
@@ -80,11 +90,13 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
         String entryHeader = webRequest.getHeader("Booking-Entry-Token");
         if (entryHeader != null && entryHeader.startsWith("Bearer ")) {
             String entryToken = entryHeader.substring(7);
-            if(entryTokenBlacklistService.isBlacklisted(entryToken)){
-                throw new BookingException(BookingErrorCode.BLACKLISTED_ENTRY_TOKEN);
-            }
+
             // 입장 토큰 전용 시크릿으로 검증 후 반환
             BookingTokenClaims entryTokenClaims =  tokenProvider.validateEntryToken(entryToken);
+
+            if (!entryTokenBlacklistService.tryBlacklist(entryToken, entryTokenClaims.expirationAt())) {
+                throw new BookingException(BookingErrorCode.BLACKLISTED_ENTRY_TOKEN);
+            }
 
             if(!entryTokenClaims.userId().equals(UUID.fromString(xUserId))){
                 throw new BookingException(BookingErrorCode.INVALID_USER_ID);
@@ -100,9 +112,8 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
 
             response.setHeader("Booking-Session-Token", "Bearer " + newToken);
             response.setHeader("Booking-Entry-Token","");
-            entryTokenBlacklistService.blacklist(entryToken, entryTokenClaims.expirationAt());
 
-            return entryTokenClaims;
+            return tokenProvider.validateSessionToken(newToken);
         }
 
         // 3. 둘 다 없으면 예외 발생

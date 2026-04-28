@@ -1,5 +1,6 @@
 package com.firstticket.bookingservice.global.token;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -14,17 +15,14 @@ public class EntryTokenBlacklistService {
     private final RedissonClient redissonClient;
     private static final String PREFIX = "blacklist:entry:";
 
-    public void blacklist(String token, Date expirationDate){
-        long remainingTtlMillis = expirationDate.getTime() - System.currentTimeMillis();
-        // 남은 시간이 0보다 클 때만 저장 (이미 만료된 건 저장할 필요 없음)
-        if (remainingTtlMillis > 0) {
-            RBucket<String> bucket = redissonClient.getBucket(PREFIX + token);
-            bucket.set("invalid", remainingTtlMillis, TimeUnit.MILLISECONDS);
-        }
-    }
+    // EntryTokenBlacklistService
+    public boolean tryBlacklist(String token, Date expirationDate) {
+        long ttl = expirationDate.getTime() - System.currentTimeMillis();
+        if (ttl <= 0) return false;
 
-    public boolean isBlacklisted(String token){
         RBucket<String> bucket = redissonClient.getBucket(PREFIX + token);
-        return bucket.isExists(); // 키가 존재하면 블랙리스트에 있는 것
+        return bucket.setIfAbsent("invalid", Duration.ofMillis(ttl)); // blacklist:entry:토큰 키가 있는지 확인 -> 값에 invalid 넣고, ttl 저장
+        // true  → 최초 등록 성공 → 진행
+        // false → 이미 존재 → 중복 요청
     }
 }
