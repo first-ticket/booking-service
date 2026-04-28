@@ -1,5 +1,7 @@
 package com.firstticket.bookingservice.booking.domain;
 
+import com.firstticket.bookingservice.booking.domain.global.exception.BookingErrorCode;
+import com.firstticket.bookingservice.booking.domain.global.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.vo.Money;
 
 import jakarta.persistence.AttributeOverride;
@@ -86,6 +88,11 @@ public class Booking extends BaseUserEntity {
 
     //양방향 연관관계 불변식을 위해 aggregate root가 자식 생성/연결을 직접 통제하게함
     public void addItem(UUID seatId, String seatPosition, Money price){
+        Objects.requireNonNull(seatId, "seatId는 null일 수 없습니다.");
+        Objects.requireNonNull(price, "price는 null일 수 없습니다.");
+        if (seatPosition == null || seatPosition.isBlank()) {
+        throw new BookingException(BookingErrorCode.EMPTY_SEAT_POSITION);
+        }
         BookingItem item = BookingItem.of(this, seatId, seatPosition, price);
         this.bookingItems.add(item);
     }

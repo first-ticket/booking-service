@@ -1,5 +1,8 @@
 package com.firstticket.bookingservice.booking.domain;
 
+import static com.firstticket.bookingservice.booking.domain.global.exception.BookingErrorCode.IMPOSSIBLE_STATE_TRANSITION;
+
+import com.firstticket.bookingservice.booking.domain.global.exception.BookingException;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,9 +22,7 @@ public enum BookingStatus {
 
     public BookingStatus validateTransition(BookingStatus nextStatus){
         if(!TRANSITIONS.get(this).contains(nextStatus)){
-            throw new IllegalStateException(
-                this + " -> " + nextStatus + ": 허용되지 않는 상태 전이 입니다."
-            );
+            throw new BookingException(IMPOSSIBLE_STATE_TRANSITION);
         }
         return nextStatus;
     }
