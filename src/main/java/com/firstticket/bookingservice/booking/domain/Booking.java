@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,7 +30,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "bookings")
+@Table(name = "P_BOOKING")
 public class Booking extends BaseUserEntity {
 
     @Id
@@ -73,8 +74,8 @@ public class Booking extends BaseUserEntity {
     }
 
     private Booking(UUID userId, UUID scheduleId, Long amount ) {
-        this.userId = userId;
-        this.scheduleId = scheduleId;
+        this.userId = Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+        this.scheduleId = Objects.requireNonNull(scheduleId, "scheduleId는 null일 수 없습니다.");
         this.status = BookingStatus.PENDING;
         this.totalPrice = new Money(amount);
     }
