@@ -80,7 +80,7 @@ class SeatManagerTest {
         seatManager.reserveSeats(seats, scheduleId, userId, sessionId);
 
         assertThat(seat1.isAvailable()).isFalse();
-        assertThat(seat1.isAvailable()).isFalse();
+        assertThat(seat2.isAvailable()).isFalse();
         verify(seatHoldManager).releaseAll(seatIds, scheduleId, userId, sessionId);
     }
 
