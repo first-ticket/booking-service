@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Testcontainers
-public class RedissonSeatHoldManagerTest {
+class RedissonSeatHoldManagerTest {
 
     @Container
     static RedisContainer redis = new RedisContainer(
