@@ -46,7 +46,7 @@ public class Booking extends BaseUserEntity {
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Getter(AccessLevel.NONE) // 외부에서 수정하지 못하도록 메서드를 통해 get 가능 + ( 불변 리스트로 반환할것 )
-    private List<BookingItem> bookingItems = new ArrayList<>();
+    private final List<BookingItem> bookingItems = new ArrayList<>();
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -84,10 +84,13 @@ public class Booking extends BaseUserEntity {
         return new Booking(userId, scheduleId, amount);
     }
 
-    public void addItem(BookingItem item){
+    //양방향 연관관계 불변식을 위해 aggregate root가 자식 생성/연결을 직접 통제하게함
+    public void addItem(UUID seatId, String seatPosition, Money price){
+        BookingItem item = BookingItem.of(this, seatId, seatPosition, price);
         this.bookingItems.add(item);
     }
 
+    // 외부에서 변경 못하도록 불변 리스트로 반환 (getter 로는 접근 불가)
     public List<BookingItem> getBookingItems(){
         return Collections.unmodifiableList(this.bookingItems);
     }
