@@ -71,16 +71,10 @@ public class Seat extends BaseEntity {
         );
     }
 
-    public void hold(UUID userId, String sessionId) {
-        // TODO: Redis 좌석 선점 등록
-    }
-
-    public void release() {
-        // TODO: Redis 좌석 선점 해제
-    }
-
     public void reserve() {
-        // TODO: Redis 좌석 선점 해제
+        if (this.status == SeatStatus.RESERVED) {
+            throw new SeatException(SeatErrorCode.SEAT_ALREADY_RESERVED);
+        }
         this.status = SeatStatus.RESERVED;
     }
 

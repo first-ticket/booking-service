@@ -14,7 +14,10 @@ public enum SeatErrorCode implements ErrorCode {
     INVALID_SEAT(HttpStatus.BAD_REQUEST, "유효하지 않은 좌석입니다."),
     INVALID_SEAT_PRICE(HttpStatus.BAD_REQUEST, "유효하지 않은 좌석 가격입니다."),
     SEAT_ALREADY_HELD(HttpStatus.CONFLICT, "이미 선택된 좌석입니다."),
-    SEAT_HOLD_FAILED(HttpStatus.CONFLICT, "이미 선택된 좌석입니다.");
+    SEAT_HOLD_FAILED(HttpStatus.CONFLICT, "이미 선택된 좌석입니다."),
+    SEAT_NOT_AVAILABLE(HttpStatus.CONFLICT, "이미 예매된 좌석입니다."),
+    SEAT_NOT_HELD(HttpStatus.CONFLICT, "선점 정보가 유효하지 않습니다."),
+    SEAT_ALREADY_RESERVED(HttpStatus.CONFLICT, "이미 예매된 좌석입니다.");
 
     private final HttpStatus status;
     private final String message;
