@@ -94,16 +94,16 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
             // 입장 토큰 전용 시크릿으로 검증 후 반환
             BookingTokenClaims entryTokenClaims =  tokenProvider.validateEntryToken(entryToken);
 
-            if (!entryTokenBlacklistService.tryBlacklist(entryToken, entryTokenClaims.expirationAt())) {
-                throw new BookingException(BookingErrorCode.BLACKLISTED_ENTRY_TOKEN);
-            }
-
             if(!entryTokenClaims.userId().equals(UUID.fromString(xUserId))){
                 throw new BookingException(BookingErrorCode.INVALID_USER_ID);
             }
 
             if(!entryTokenClaims.programId().equals(programId)){
                 throw new BookingException(BookingErrorCode.INVALID_PROGRAM_ID);
+            }
+
+            if (!entryTokenBlacklistService.tryBlacklist(entryToken, entryTokenClaims.expirationAt())) {
+                throw new BookingException(BookingErrorCode.BLACKLISTED_ENTRY_TOKEN);
             }
 
             //TODO 해당 프로그램ID가 유효한 프로그램ID인지 프로그램서버 조회 (추후 도입)
