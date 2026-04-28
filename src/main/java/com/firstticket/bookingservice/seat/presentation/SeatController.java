@@ -3,6 +3,7 @@ package com.firstticket.bookingservice.seat.presentation;
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.presentation.dto.request.HoldSeatsRequest;
 import com.firstticket.common.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,7 +26,7 @@ public class SeatController {
     @PostMapping("/schedules/{scheduleId}/hold")
     public ResponseEntity<ApiResponse<Void>> holdSeats(
         @PathVariable UUID scheduleId,
-        @RequestBody HoldSeatsRequest request,
+        @Valid @RequestBody HoldSeatsRequest request,
         @RequestHeader("X-User-Id") UUID userId,
         @RequestHeader("X-Session-Id") String sessionId
     ) {

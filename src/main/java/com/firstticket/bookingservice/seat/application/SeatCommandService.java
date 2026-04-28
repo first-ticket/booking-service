@@ -25,6 +25,7 @@ public class SeatCommandService {
     public void holdSeats(HoldSeatsCommand command, UUID userId, String sessionId) {
         List<SeatId> seatIds = command.seatIds().stream()
             .map(SeatId::of)
+            .distinct()
             .toList();
 
         List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(seatIds, command.scheduleId());
