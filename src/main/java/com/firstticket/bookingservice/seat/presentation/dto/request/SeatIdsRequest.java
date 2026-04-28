@@ -5,7 +5,10 @@ import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
 public record SeatIdsRequest(
-    @NotEmpty
-    List<UUID> seatIds
+    `@NotEmpty`
+    List<@NotNull UUID> seatIds
 ) {}
