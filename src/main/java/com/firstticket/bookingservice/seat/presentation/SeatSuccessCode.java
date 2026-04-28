@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum SeatSuccessCode implements SuccessCode {
 
     SEAT_HELD(HttpStatus.OK, "좌석 선점이 완료되었습니다."),
-    SEAT_RELEASED(HttpStatus.OK, "좌석 선점이 해제되었습니다.");
+    SEAT_RELEASED(HttpStatus.OK, "좌석 선점이 해제되었습니다."),
+    SEAT_HOLD_VALID(HttpStatus.OK, "좌석 선점이 유효합니다.");
 
     private final HttpStatus status;
     private final String message;

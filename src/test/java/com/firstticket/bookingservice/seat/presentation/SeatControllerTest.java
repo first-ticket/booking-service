@@ -49,7 +49,7 @@ class SeatControllerTest extends RestDocsSupport {
     void holdSeats_success() throws Exception {
         willDoNothing()
             .given(seatCommandService)
-            .holdSeats(any(), any(UUID.class), any(String.class));
+            .holdSeats(any(), any(UUID.class), any(UUID.class), any(String.class));
 
         mockMvc.perform(RestDocumentationRequestBuilders
                 .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
@@ -89,7 +89,7 @@ class SeatControllerTest extends RestDocsSupport {
     void holdSeats_alreadyHeld() throws Exception {
         willThrow(new SeatException(SeatErrorCode.SEAT_ALREADY_HELD))
             .given(seatCommandService)
-            .holdSeats(any(), any(UUID.class), any(String.class));
+            .holdSeats(any(),any(UUID.class), any(UUID.class), any(String.class));
 
         mockMvc.perform(RestDocumentationRequestBuilders
                 .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)

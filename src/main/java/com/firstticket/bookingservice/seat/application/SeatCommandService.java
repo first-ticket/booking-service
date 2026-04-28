@@ -1,6 +1,5 @@
 package com.firstticket.bookingservice.seat.application;
 
-import com.firstticket.bookingservice.seat.application.dto.command.HoldSeatsCommand;
 import com.firstticket.bookingservice.seat.domain.Seat;
 import com.firstticket.bookingservice.seat.domain.SeatId;
 import com.firstticket.bookingservice.seat.domain.SeatRepository;
@@ -22,24 +21,32 @@ public class SeatCommandService {
     private final SeatManager seatManager;
 
     @Transactional
-    public void holdSeats(HoldSeatsCommand command, UUID userId, String sessionId) {
-        List<SeatId> seatIds = command.seatIds().stream()
-            .map(SeatId::of)
-            .distinct()
-            .toList();
+    public void holdSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
+        List<SeatId> ids = toSeatIds(seatIds);
 
-        List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(seatIds, command.scheduleId());
+        List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(ids, scheduleId);
         if (seats.size() != seatIds.size()) {
             throw new SeatException(SeatErrorCode.SEAT_NOT_FOUND);
         }
 
-        seatManager.holdSeats(seats, command.scheduleId(), userId, sessionId);
+        seatManager.holdSeats(seats, scheduleId, userId, sessionId);
     }
 
     @Transactional
     public void releaseSeats(UUID scheduleId, UUID userId, String sessionId) {
         List<SeatId> seatIds = seatManager.getHeldSeats(sessionId);
         seatManager.releaseSeats(seatIds, scheduleId, userId, sessionId);
+    }
+
+    @Transactional
+    public void validateHold(List<UUID> seatIds, UUID userId, String sessionId) {
+        if (!seatManager.validateHold(toSeatIds(seatIds), userId, sessionId)) {
+            throw new SeatException(SeatErrorCode.SEAT_NOT_HELD);
+        }
+    }
+
+    private List<SeatId> toSeatIds(List<UUID> seatIds) {
+        return seatIds.stream().map(SeatId::of).distinct().toList();
     }
 
 }
