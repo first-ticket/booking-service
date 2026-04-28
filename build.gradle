@@ -83,15 +83,20 @@ dependencies {
 
     implementation 'org.redisson:redisson-spring-boot-starter:4.3.0'
 
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+
 //    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
 //    implementation 'io.opentelemetry.exporter:opentelemetry-exporter-otlp'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     runtimeOnly 'com.h2database:h2' // 초기 빌드용
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'com.redis:testcontainers-redis:2.2.2'

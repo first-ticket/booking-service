@@ -1,8 +1,8 @@
 package com.firstticket.bookingservice.booking.domain;
 
-import static com.firstticket.bookingservice.booking.domain.global.exception.BookingErrorCode.IMPOSSIBLE_STATE_TRANSITION;
+import static com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode.IMPOSSIBLE_STATE_TRANSITION;
 
-import com.firstticket.bookingservice.booking.domain.global.exception.BookingException;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import java.util.Map;
 import java.util.Set;
 

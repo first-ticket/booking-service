@@ -1,7 +1,7 @@
 package com.firstticket.bookingservice.booking.domain;
 
-import com.firstticket.bookingservice.booking.domain.global.exception.BookingErrorCode;
-import com.firstticket.bookingservice.booking.domain.global.exception.BookingException;
+import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.vo.Money;
 
 import jakarta.persistence.AttributeOverride;
