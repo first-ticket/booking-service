@@ -8,8 +8,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 @Getter
 public enum BookingErrorCode implements ErrorCode {
-    IMPOSSIBLE_STATE_TRANSITION(HttpStatus.FORBIDDEN, "[Booking domain]_허용되지 않는 상태 전이 입니다"),
-    EMPTY_SEAT_POSITION(HttpStatus.FORBIDDEN, "[Booking domain]_좌석 정보는 필수입니다");
+    IMPOSSIBLE_STATE_TRANSITION(HttpStatus.CONFLICT, "[Booking domain]_허용되지 않는 상태 전이 입니다"),
+    EMPTY_SEAT_POSITION(HttpStatus.BAD_REQUEST, "[Booking domain]_좌석 정보는 필수입니다");
 
     private final HttpStatus status;
     private final String message;
