@@ -72,6 +72,9 @@ public class Seat extends BaseEntity {
     }
 
     public void reserve() {
+        if (this.status == SeatStatus.RESERVED) {
+            throw new SeatException(SeatErrorCode.SEAT_ALREADY_RESERVED);
+        }
         this.status = SeatStatus.RESERVED;
     }
 
