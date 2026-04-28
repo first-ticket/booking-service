@@ -5,6 +5,7 @@ import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.global.annotation.BookingToken;
 import com.firstticket.bookingservice.global.token.BookingTokenClaims;
 import com.firstticket.bookingservice.global.token.BookingTokenProvider;
+import com.firstticket.bookingservice.global.token.EntryTokenBlacklistService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.springframework.web.servlet.HandlerMapping;
 public class BookingTokenResolver implements HandlerMethodArgumentResolver {
 
     private final BookingTokenProvider tokenProvider;
+    private final EntryTokenBlacklistService entryTokenBlacklistService;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -78,6 +80,9 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
         String entryHeader = webRequest.getHeader("Booking-Entry-Token");
         if (entryHeader != null && entryHeader.startsWith("Bearer ")) {
             String entryToken = entryHeader.substring(7);
+            if(entryTokenBlacklistService.isBlacklisted(entryToken)){
+                throw new BookingException(BookingErrorCode.BLACKLISTED_ENTRY_TOKEN);
+            }
             // 입장 토큰 전용 시크릿으로 검증 후 반환
             BookingTokenClaims entryTokenClaims =  tokenProvider.validateEntryToken(entryToken);
 
@@ -93,7 +98,9 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
 
             String newToken = tokenProvider.generateSessionToken(entryTokenClaims.userId(), entryTokenClaims.programId());
 
-            response.setHeader("Booking-Session-Token", newToken);
+            response.setHeader("Booking-Session-Token", "Bearer " + newToken);
+            response.setHeader("Booking-Entry-Token","");
+            entryTokenBlacklistService.blacklist(entryToken, entryTokenClaims.expirationAt());
 
             return entryTokenClaims;
         }

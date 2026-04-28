@@ -18,6 +18,11 @@ spring:
   profiles:
     include: kafka
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
 # 예매 입장, 세션 토큰 -> 추후 컨피그 서버로 옮길 예정
 booking:
   token:

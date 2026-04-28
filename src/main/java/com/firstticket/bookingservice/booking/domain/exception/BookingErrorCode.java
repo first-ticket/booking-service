@@ -14,6 +14,7 @@ public enum BookingErrorCode implements ErrorCode {
 
     EXPIRED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 만료되었습니다"),
     INVALID_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 유효하지 않습니다"),
+    BLACKLISTED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 유효하지 않습니다"),
 
     EXPIRED_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "예매 세션 토큰이 만료되었습니다"),
     INVALID_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "예매 세션 토큰이 유효하지 않습니다"),
@@ -23,6 +24,7 @@ public enum BookingErrorCode implements ErrorCode {
     INVALID_PROGRAM_ID(HttpStatus.FORBIDDEN, "토큰의 프로그램 정보가 요청 경로와 일치하지 않습니다"),
     EMPTY_X_USER_ID(HttpStatus.BAD_REQUEST, "X-User-Id 헤더가 누락되었습니다"),
     EMPTY_PATHVARIABLE(HttpStatus.BAD_REQUEST, "프로그램 ID가 요청 경로에 포함되지 않았습니다");
+    ;
 
     private final HttpStatus status;
     private final String message;

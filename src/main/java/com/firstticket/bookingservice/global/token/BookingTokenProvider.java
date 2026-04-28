@@ -38,7 +38,7 @@ public class BookingTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
 
-            return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)));
+            return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)), claims.getExpiration());
 
         }catch (ExpiredJwtException e){
             throw new BookingException(BookingErrorCode.EXPIRED_ENTRY_TOKEN);
@@ -74,7 +74,7 @@ public class BookingTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
 
-            return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)));
+            return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)), claims.getExpiration());
 
         }catch (ExpiredJwtException e){
             throw new BookingException(BookingErrorCode.EXPIRED_SESSION_TOKEN);
