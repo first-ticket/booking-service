@@ -6,6 +6,8 @@ import com.firstticket.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -29,5 +31,16 @@ public class SeatInternalController {
     ) {
         seatCommandService.validateHold(request.seatIds(), userId, sessionId);
         return ApiResponse.success(SeatSuccessCode.SEAT_HOLD_VALID);
+    }
+
+    @PatchMapping("/schedules/{scheduleId}/reserve")
+    public ResponseEntity<ApiResponse<Void>> reserveSeats(
+        @PathVariable UUID scheduleId,
+        @Valid @RequestBody SeatIdsRequest request,
+        @RequestHeader("X-User-Id") UUID userId,
+        @RequestHeader("X-Session-Id") String sessionId
+    ) {
+        seatCommandService.reserveSeats(request.seatIds(), scheduleId, userId, sessionId);
+        return ApiResponse.success(SeatSuccessCode.SEAT_RESERVED);
     }
 }

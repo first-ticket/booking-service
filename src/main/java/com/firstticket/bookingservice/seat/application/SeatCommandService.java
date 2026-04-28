@@ -22,14 +22,7 @@ public class SeatCommandService {
 
     @Transactional
     public void holdSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
-        List<SeatId> ids = toSeatIds(seatIds);
-
-        List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(ids, scheduleId);
-        if (seats.size() != seatIds.size()) {
-            throw new SeatException(SeatErrorCode.SEAT_NOT_FOUND);
-        }
-
-        seatManager.holdSeats(seats, scheduleId, userId, sessionId);
+        seatManager.holdSeats(getSeats(seatIds, scheduleId), scheduleId, userId, sessionId);
     }
 
     @Transactional
@@ -43,6 +36,21 @@ public class SeatCommandService {
         if (!seatManager.validateHold(toSeatIds(seatIds), userId, sessionId)) {
             throw new SeatException(SeatErrorCode.SEAT_NOT_HELD);
         }
+    }
+
+    @Transactional
+    public void reserveSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
+        seatManager.reserveSeats(getSeats(seatIds, scheduleId), scheduleId, userId, sessionId);
+    }
+
+    private List<Seat> getSeats(List<UUID> seatIds, UUID scheduleId) {
+        List<SeatId> ids = toSeatIds(seatIds);
+
+        List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(ids, scheduleId);
+        if (seats.size() != ids.size()) {
+            throw new SeatException(SeatErrorCode.SEAT_NOT_FOUND);
+        }
+        return seats;
     }
 
     private List<SeatId> toSeatIds(List<UUID> seatIds) {
