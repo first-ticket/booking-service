@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class SeatHoldService {
+public class SeatManager {
 
     private final SeatHoldManager seatHoldManager;
 
@@ -26,6 +26,14 @@ public class SeatHoldService {
         List<SeatId> seatIds = seats.stream().map(Seat::getId).toList();
 
         seatHoldManager.hold(seatIds, scheduleId, userId, sessionId);
+    }
+
+    public void reserveSeats(List<Seat> seats, UUID scheduleId, UUID userId, String sessionId) {
+        if (!validateHold(seats.stream().map(Seat::getId).toList(), userId, sessionId)) {
+            throw new SeatException(SeatErrorCode.SEAT_NOT_HELD);
+        }
+        seats.forEach(Seat::reserve);
+        releaseSeats(seats.stream().map(Seat::getId).toList(), scheduleId, userId, sessionId);
     }
 
     public boolean releaseSeats(List<SeatId> seatIds, UUID scheduleId, UUID userId, String sessionId) {
