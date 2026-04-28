@@ -5,6 +5,7 @@ import com.firstticket.bookingservice.seat.presentation.dto.request.HoldSeatsReq
 import com.firstticket.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,5 +31,15 @@ public class SeatController {
     ) {
         seatCommandService.holdSeats(request.toCommand(scheduleId), userId, sessionId);
         return ApiResponse.success(SeatSuccessCode.SEAT_HELD);
+    }
+
+    @DeleteMapping("/schedules/{scheduleId}/hold")
+    public ResponseEntity<ApiResponse<Void>> releaseSeats(
+        @PathVariable UUID scheduleId,
+        @RequestHeader("X-User-Id") UUID userId,
+        @RequestHeader("X-Session-Id") String sessionId
+    ) {
+        seatCommandService.releaseSeats(scheduleId, userId, sessionId);
+        return ApiResponse.success(SeatSuccessCode.SEAT_RELEASED);
     }
 }

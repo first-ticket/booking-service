@@ -34,4 +34,11 @@ public class SeatCommandService {
 
         seatManager.holdSeats(seats, command.scheduleId(), userId, sessionId);
     }
+
+    @Transactional
+    public void releaseSeats(UUID scheduleId, UUID userId, String sessionId) {
+        List<SeatId> seatIds = seatManager.getHeldSeats(sessionId);
+        seatManager.releaseSeats(seatIds, scheduleId, userId, sessionId);
+    }
+
 }
