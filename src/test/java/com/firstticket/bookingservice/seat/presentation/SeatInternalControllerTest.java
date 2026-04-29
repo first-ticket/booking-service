@@ -17,6 +17,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
@@ -30,9 +32,9 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(SeatController.class)
+@WebMvcTest(SeatInternalController.class)
 @Import(GlobalExceptionHandler.class)
-class SeatControllerTest extends RestDocsSupport {
+class SeatInternalControllerTest extends RestDocsSupport {
 
     @MockitoBean
     private SeatCommandService seatCommandService;
@@ -45,14 +47,14 @@ class SeatControllerTest extends RestDocsSupport {
     private final String sessionId = UUID.randomUUID().toString();
 
     @Test
-    @DisplayName("좌석 선점 성공")
-    void holdSeats_success() throws Exception {
+    @DisplayName("선점 유효성 확인 성공")
+    void validateHold_success() throws Exception {
         willDoNothing()
             .given(seatCommandService)
-            .holdSeats(any(), any(UUID.class), any(UUID.class), any(String.class));
+            .validateHold(anyList(), any(UUID.class), anyString());
 
         mockMvc.perform(RestDocumentationRequestBuilders
-                .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
+                .post("/internal/v1/seats/hold/valid")
                 .header("X-User-Id", userId)
                 .header("X-Session-Id", sessionId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -63,17 +65,13 @@ class SeatControllerTest extends RestDocsSupport {
                         """.formatted(UUID.randomUUID(), UUID.randomUUID())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.code").value("SEAT_HELD"))
-            .andDo(document("seat-hold-success",
+            .andDo(document("seat-hold-valid-success",
                 requestHeaders(
                     headerWithName("X-User-Id").description("사용자 ID"),
                     headerWithName("X-Session-Id").description("예매 세션 ID")
                 ),
-                pathParameters(
-                    parameterWithName("scheduleId").description("회차 ID")
-                ),
                 requestFields(
-                    fieldWithPath("seatIds").description("선점할 좌석 ID 목록")
+                    fieldWithPath("seatIds").description("유효성 확인할 좌석 ID 목록")
                 ),
                 responseFields(
                     fieldWithPath("success").description("성공 여부"),
@@ -85,14 +83,14 @@ class SeatControllerTest extends RestDocsSupport {
     }
 
     @Test
-    @DisplayName("이미 선점된 좌석 선점 시도 시 409 반환")
-    void holdSeats_alreadyHeld() throws Exception {
-        willThrow(new SeatException(SeatErrorCode.SEAT_ALREADY_HELD))
+    @DisplayName("선점 유효성 확인 실패 - 선점 정보가 유효하지 않으면 409 반환")
+    void validateHold_notHeld() throws Exception {
+        willThrow(new SeatException(SeatErrorCode.SEAT_NOT_HELD))
             .given(seatCommandService)
-            .holdSeats(any(),any(UUID.class), any(UUID.class), any(String.class));
+            .validateHold(anyList(), any(UUID.class), anyString());
 
         mockMvc.perform(RestDocumentationRequestBuilders
-                .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
+                .post("/internal/v1/seats/hold/valid")
                 .header("X-User-Id", userId)
                 .header("X-Session-Id", sessionId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -103,7 +101,7 @@ class SeatControllerTest extends RestDocsSupport {
                         """.formatted(UUID.randomUUID())))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.success").value(false))
-            .andDo(document("seat-hold-already-held",
+            .andDo(document("seat-hold-valid-failed",
                 responseFields(
                     fieldWithPath("success").description("성공 여부"),
                     fieldWithPath("code").description("에러 코드"),
@@ -114,20 +112,25 @@ class SeatControllerTest extends RestDocsSupport {
     }
 
     @Test
-    @DisplayName("좌석 선점 취소 성공")
-    void releaseSeats_success() throws Exception {
+    @DisplayName("좌석 확정 성공")
+    void reserveSeats_success() throws Exception {
         willDoNothing()
             .given(seatCommandService)
-            .releaseSeats(any(UUID.class), any(UUID.class), any(String.class));
+            .reserveSeats(anyList(), any(UUID.class), any(UUID.class), anyString());
 
         mockMvc.perform(RestDocumentationRequestBuilders
-                .delete("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
+                .patch("/internal/v1/seats/schedules/{scheduleId}/reserve", scheduleId)
                 .header("X-User-Id", userId)
-                .header("X-Session-Id", sessionId))
+                .header("X-Session-Id", sessionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "seatIds": ["%s", "%s"]
+                        }
+                        """.formatted(UUID.randomUUID(), UUID.randomUUID())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.code").value("SEAT_RELEASED"))
-            .andDo(document("seat-release-success",
+            .andDo(document("seat-reserve-success",
                 requestHeaders(
                     headerWithName("X-User-Id").description("사용자 ID"),
                     headerWithName("X-Session-Id").description("예매 세션 ID")
@@ -135,10 +138,42 @@ class SeatControllerTest extends RestDocsSupport {
                 pathParameters(
                     parameterWithName("scheduleId").description("회차 ID")
                 ),
+                requestFields(
+                    fieldWithPath("seatIds").description("확정할 좌석 ID 목록")
+                ),
                 responseFields(
                     fieldWithPath("success").description("성공 여부"),
                     fieldWithPath("code").description("응답 코드"),
                     fieldWithPath("message").description("응답 메시지"),
+                    fieldWithPath("timestamp").description("응답 시간")
+                )
+            ));
+    }
+
+    @Test
+    @DisplayName("좌석 확정 실패 - 선점 정보가 유효하지 않으면 409 반환")
+    void reserveSeats_notHeld() throws Exception {
+        willThrow(new SeatException(SeatErrorCode.SEAT_NOT_HELD))
+            .given(seatCommandService)
+            .reserveSeats(anyList(), any(UUID.class), any(UUID.class), anyString());
+
+        mockMvc.perform(RestDocumentationRequestBuilders
+                .patch("/internal/v1/seats/schedules/{scheduleId}/reserve", scheduleId)
+                .header("X-User-Id", userId)
+                .header("X-Session-Id", sessionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                            "seatIds": ["%s"]
+                        }
+                        """.formatted(UUID.randomUUID())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.success").value(false))
+            .andDo(document("seat-reserve-failed",
+                responseFields(
+                    fieldWithPath("success").description("성공 여부"),
+                    fieldWithPath("code").description("에러 코드"),
+                    fieldWithPath("message").description("에러 메시지"),
                     fieldWithPath("timestamp").description("응답 시간")
                 )
             ));

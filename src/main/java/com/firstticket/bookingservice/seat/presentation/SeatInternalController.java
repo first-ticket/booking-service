@@ -6,7 +6,7 @@ import com.firstticket.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,29 +18,29 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/seats")
-public class SeatController {
+@RequestMapping("/internal/v1/seats")
+public class SeatInternalController {
 
     private final SeatCommandService seatCommandService;
 
-    @PostMapping("/schedules/{scheduleId}/hold")
-    public ResponseEntity<ApiResponse<Void>> holdSeats(
+    @PostMapping("/hold/valid")
+    public ResponseEntity<ApiResponse<Void>> validateHold(
+        @Valid @RequestBody SeatIdsRequest request,
+        @RequestHeader("X-User-Id") UUID userId,
+        @RequestHeader("X-Session-Id") String sessionId
+    ) {
+        seatCommandService.validateHold(request.seatIds(), userId, sessionId);
+        return ApiResponse.success(SeatSuccessCode.SEAT_HOLD_VALID);
+    }
+
+    @PatchMapping("/schedules/{scheduleId}/reserve")
+    public ResponseEntity<ApiResponse<Void>> reserveSeats(
         @PathVariable UUID scheduleId,
         @Valid @RequestBody SeatIdsRequest request,
         @RequestHeader("X-User-Id") UUID userId,
         @RequestHeader("X-Session-Id") String sessionId
     ) {
-        seatCommandService.holdSeats(request.seatIds(), scheduleId, userId, sessionId);
-        return ApiResponse.success(SeatSuccessCode.SEAT_HELD);
-    }
-
-    @DeleteMapping("/schedules/{scheduleId}/hold")
-    public ResponseEntity<ApiResponse<Void>> releaseSeats(
-        @PathVariable UUID scheduleId,
-        @RequestHeader("X-User-Id") UUID userId,
-        @RequestHeader("X-Session-Id") String sessionId
-    ) {
-        seatCommandService.releaseSeats(scheduleId, userId, sessionId);
-        return ApiResponse.success(SeatSuccessCode.SEAT_RELEASED);
+        seatCommandService.reserveSeats(request.seatIds(), scheduleId, userId, sessionId);
+        return ApiResponse.success(SeatSuccessCode.SEAT_RESERVED);
     }
 }
