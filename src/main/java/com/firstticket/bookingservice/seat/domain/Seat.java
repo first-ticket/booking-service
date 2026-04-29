@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;
 
@@ -35,6 +36,7 @@ import java.util.UUID;
 @Table(name = "P_SEAT")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SQLRestriction("deleted_at IS NULL")
 public class Seat extends BaseEntity {
 
     @EmbeddedId
