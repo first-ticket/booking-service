@@ -2,7 +2,6 @@ package com.firstticket.bookingservice.global.token;
 
 import java.time.Duration;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
