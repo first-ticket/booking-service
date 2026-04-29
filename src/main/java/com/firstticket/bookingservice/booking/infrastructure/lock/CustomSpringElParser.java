@@ -6,6 +6,11 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 public class CustomSpringElParser {
     public static String getDynamicValue(String[] parameterNames, Object[] args, String key) {
+
+        if (parameterNames == null || args == null || parameterNames.length != args.length) {
+            throw new IllegalArgumentException("SpEL 파라미터 이름/값 매핑이 유효하지 않습니다.");
+        }
+
         ExpressionParser parser = new SpelExpressionParser();
         StandardEvaluationContext context = new StandardEvaluationContext();
 
