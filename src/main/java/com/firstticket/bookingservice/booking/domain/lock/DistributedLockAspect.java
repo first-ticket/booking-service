@@ -31,7 +31,6 @@ public class DistributedLockAspect {
             distributedLock.key()
         );
 
-        //2. Redisson 락 획득 시도
         // 2. Redisson 락 획득 시도
         RLock rLock = redissonClient.getLock(key);
 
