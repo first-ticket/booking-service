@@ -1,4 +1,4 @@
-package com.firstticket.bookingservice.booking.domain.lock;
+package com.firstticket.bookingservice.booking.infrastructure.lock;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.stereotype.Component;

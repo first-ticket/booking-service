@@ -1,5 +1,6 @@
-package com.firstticket.bookingservice.booking.domain.lock;
+package com.firstticket.bookingservice.booking.infrastructure.lock;
 
+import com.firstticket.bookingservice.booking.application.lock.DistributedLock;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,10 @@ public class DistributedLockAspect {
             distributedLock.key()
         );
 
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("분산 락 키가 null이거나 비어있습니다: " + distributedLock.key());
+        }
+
         // 2. Redisson 락 획득 시도
         RLock rLock = redissonClient.getLock(key);
 
@@ -38,7 +43,7 @@ public class DistributedLockAspect {
             // waitTime만큼 기다리고, leaseTime만큼 점유함
             boolean available = rLock.tryLock(
                 distributedLock.waitTime(),
-                distributedLock.leaseTime(),
+                -1,
                 distributedLock.timeUnit()
             );
 

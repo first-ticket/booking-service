@@ -1,4 +1,4 @@
-package com.firstticket.bookingservice.booking.domain.lock;
+package com.firstticket.bookingservice.booking.infrastructure.lock;
 
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
