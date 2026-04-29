@@ -11,6 +11,10 @@ public class CustomSpringElParser {
             throw new IllegalArgumentException("SpEL 파라미터 이름/값 매핑이 유효하지 않습니다.");
         }
 
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("SpEL key는 null/blank일 수 없습니다.");
+        }
+
         ExpressionParser parser = new SpelExpressionParser();
         StandardEvaluationContext context = new StandardEvaluationContext();
 
