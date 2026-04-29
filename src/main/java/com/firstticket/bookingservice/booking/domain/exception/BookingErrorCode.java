@@ -23,7 +23,9 @@ public enum BookingErrorCode implements ErrorCode {
     INVALID_USER_ID(HttpStatus.FORBIDDEN, "토큰의 사용자 정보가 요청자와 일치하지 않습니다"),
     INVALID_PROGRAM_ID(HttpStatus.FORBIDDEN, "토큰의 프로그램 정보가 요청 경로와 일치하지 않습니다"),
     EMPTY_X_USER_ID(HttpStatus.BAD_REQUEST, "X-User-Id 헤더가 누락되었습니다"),
-    EMPTY_PATHVARIABLE(HttpStatus.BAD_REQUEST, "프로그램 ID가 요청 경로에 포함되지 않았습니다");
+    EMPTY_PATHVARIABLE(HttpStatus.BAD_REQUEST, "프로그램 ID가 요청 경로에 포함되지 않았습니다"),
+
+    BOOKING_LOCK_FAILED(HttpStatus.CONFLICT, "동일한 예매 요청이 이미 처리 중입니다");
     ;
 
     private final HttpStatus status;
