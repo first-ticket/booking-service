@@ -9,10 +9,12 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;
 
@@ -31,44 +33,104 @@ import java.util.UUID;
  */
 @Entity
 @Getter
+@Table(name = "P_SEAT")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@SQLRestriction("deleted_at IS NULL")
 public class Seat extends BaseEntity {
 
     @EmbeddedId
     private SeatId id;
 
-    @Column(nullable = false)
+    @Column(name = "program_id", nullable = false)
+    private UUID programId;
+
+    @Column(name = "schedule_id", nullable = false)
     private UUID scheduleId;
 
     @Embedded
-    private SeatPosition position;
+    private Section section;
 
-    @Column(nullable = false)
-    private int price;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seat_type", nullable = false, length = 20)
+    private SeatType seatType;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SeatStatus status;
 
-    public static Seat create(UUID scheduleId, SeatPosition position, int price) {
+    @Column(nullable = false)
+    private int price;
+
+    @Embedded
+    private SeatedInfo seatedInfo;
+
+    @Embedded
+    private StandingInfo standingInfo;
+
+    public static Seat createSeated(
+        UUID programId,
+        UUID scheduleId,
+        Section section,
+        SeatedInfo seatedInfo,
+        int price
+    ) {
+        validate(programId, scheduleId, section, price);
+        if (seatedInfo == null) {
+            throw new SeatException(SeatErrorCode.INVALID_SEAT);
+        }
+
+        return new Seat(
+            SeatId.of(),
+            programId,
+            scheduleId,
+            section,
+            SeatType.SEATED,
+            SeatStatus.AVAILABLE,
+            price,
+            seatedInfo,
+            null
+        );
+    }
+
+    public static Seat createStanding(
+        UUID programId,
+        UUID scheduleId,
+        Section section,
+        StandingInfo standingInfo,
+        int price
+    ) {
+        validate(programId, scheduleId, section, price);
+        if (standingInfo == null) {
+            throw new SeatException(SeatErrorCode.INVALID_SEAT);
+        }
+
+        return new Seat(
+            SeatId.of(),
+            programId,
+            scheduleId,
+            section,
+            SeatType.STANDING,
+            SeatStatus.AVAILABLE,
+            price,
+            null,
+            standingInfo
+        );
+    }
+
+    private static void validate(UUID programId, UUID scheduleId, Section section, int price) {
+        if (programId == null) {
+            throw new SeatException(SeatErrorCode.INVALID_SEAT);
+        }
         if (scheduleId == null) {
             throw new SeatException(SeatErrorCode.INVALID_SEAT);
         }
-        if (position == null) {
+        if (section == null) {
             throw new SeatException(SeatErrorCode.INVALID_SEAT);
         }
         if (price < 0) {
             throw new SeatException(SeatErrorCode.INVALID_SEAT_PRICE);
         }
-
-        return new Seat(
-            SeatId.of(),
-            scheduleId,
-            position,
-            price,
-            SeatStatus.AVAILABLE
-        );
     }
 
     public void reserve() {
@@ -80,5 +142,11 @@ public class Seat extends BaseEntity {
 
     public boolean isAvailable() {
         return this.status == SeatStatus.AVAILABLE;
+    }
+    public String displayName() {
+        return switch (seatType) {
+            case SEATED -> seatedInfo.display(section.sectionName());
+            case STANDING -> standingInfo.display(section.sectionName());
+        };
     }
 }

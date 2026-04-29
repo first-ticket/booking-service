@@ -2,7 +2,8 @@ package com.firstticket.bookingservice.seat.domain.service;
 
 import com.firstticket.bookingservice.seat.domain.Seat;
 import com.firstticket.bookingservice.seat.domain.SeatId;
-import com.firstticket.bookingservice.seat.domain.SeatPosition;
+import com.firstticket.bookingservice.seat.domain.SeatedInfo;
+import com.firstticket.bookingservice.seat.domain.Section;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import org.junit.jupiter.api.DisplayName;
@@ -30,20 +31,22 @@ class SeatManagerTest {
 
     @Mock
     private SeatHoldManager seatHoldManager;
-    
+
+    private final UUID programId = UUID.randomUUID();
     private final UUID scheduleId = UUID.randomUUID();
     private final UUID userId = UUID.randomUUID();
     private final String sessionId = UUID.randomUUID().toString();
-    
+    private final Section section = Section.of(UUID.randomUUID(), "A구역");
+
     @Test
     @DisplayName("좌석 선점 성공 - 모든 좌석이 AVAILABLE이면 선점 등록")
     void holdSeats_success() {
-        Seat seat1 = Seat.create(scheduleId, SeatPosition.of("A", 1 , 1), 10000);
-        Seat seat2 = Seat.create(scheduleId, SeatPosition.of("A", 1, 2), 10000);
+        Seat seat1 = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 1), 10000);
+        Seat seat2 = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 2), 10000);
         List<Seat> seats = List.of(seat1, seat2);
-        
+
         seatManager.holdSeats(seats, scheduleId, userId, sessionId);
-        
+
         verify(seatHoldManager).hold(
             seats.stream().map(Seat::getId).toList(),
             scheduleId, userId, sessionId
@@ -53,8 +56,8 @@ class SeatManagerTest {
     @Test
     @DisplayName("좌석 선점 실패 - AVAILABLE이 아닌 좌석 존재 시 SEAT_NOT_AVAILABLE 예외 발생")
     void holdSeats_notAvailable() {
-        Seat availableSeat = Seat.create(scheduleId, SeatPosition.of("A", 1, 1), 10000);
-        Seat reservedSeat = Seat.create(scheduleId, SeatPosition.of("A", 1, 2), 10000);
+        Seat availableSeat = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 1), 10000);
+        Seat reservedSeat = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 2), 10000);
         reservedSeat.reserve();
         List<Seat> seats = List.of(availableSeat, reservedSeat);
 
@@ -69,8 +72,8 @@ class SeatManagerTest {
     @Test
     @DisplayName("예매 확정 성공 - 선점 유효성 확인 후 RESERVED 상태로 변경")
     void reserveSeats_success() {
-        Seat seat1 = Seat.create(scheduleId, SeatPosition.of("A", 1, 1), 10000);
-        Seat seat2 = Seat.create(scheduleId, SeatPosition.of("A", 1, 2), 10000);
+        Seat seat1 = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 1), 10000);
+        Seat seat2 = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 2), 10000);
         List<Seat> seats = List.of(seat1, seat2);
         List<SeatId> seatIds = seats.stream().map(Seat::getId).toList();
 
@@ -87,7 +90,7 @@ class SeatManagerTest {
     @Test
     @DisplayName("예매 확정 실패 - 선점 유효성 확인 실패 시 SEAT_NOT_HELD 예외 발생")
     void reserveSeats_notHeld() {
-        Seat seat = Seat.create(scheduleId, SeatPosition.of("A", 1, 1), 10000);
+        Seat seat = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 1), 10000);
         List<Seat> seats = List.of(seat);
         List<SeatId> seatIds = seats.stream().map(Seat::getId).toList();
 
