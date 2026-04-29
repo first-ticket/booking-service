@@ -9,6 +9,6 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 public record SeatIdsRequest(
-    `@NotEmpty`
+    @NotEmpty
     List<@NotNull UUID> seatIds
 ) {}
