@@ -45,7 +45,10 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
             throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
         }
 
-        String token = sessionHeader.substring(7);
+        String token = sessionHeader.substring(7).trim();
+        if(token.isEmpty()){
+            throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
+        }
 
         // 세션 토큰 전용 시크릿으로 검증 후 반환
         BookingTokenClaims sessionTokenClaims = tokenProvider.validateSessionToken(token);
