@@ -31,14 +31,12 @@ public class SeatCommandService {
         seatManager.releaseSeats(seatIds, scheduleId, userId, sessionId);
     }
 
-    @Transactional
     public void validateHold(List<UUID> seatIds, UUID userId, String sessionId) {
         if (!seatManager.validateHold(toSeatIds(seatIds), userId, sessionId)) {
             throw new SeatException(SeatErrorCode.SEAT_NOT_HELD);
         }
     }
 
-    @Transactional
     public void reserveSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         seatManager.reserveSeats(getSeats(seatIds, scheduleId), scheduleId, userId, sessionId);
     }
