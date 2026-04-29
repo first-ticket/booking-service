@@ -17,6 +17,8 @@ CREATE TABLE p_outbox
     CONSTRAINT uq_outbox_correlation_event UNIQUE (correlation_id, event_type)
 );
 
+CREATE INDEX idx_outbox_status_created ON p_outbox (status, created_at);
+
 CREATE TABLE p_inbox
 (
     message_id   UUID      NOT NULL,
