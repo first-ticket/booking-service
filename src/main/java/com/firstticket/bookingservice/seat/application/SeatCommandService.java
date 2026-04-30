@@ -1,8 +1,14 @@
 package com.firstticket.bookingservice.seat.application;
 
+import com.firstticket.bookingservice.seat.application.dto.command.CreateSeatsCommand;
+import com.firstticket.bookingservice.seat.application.dto.command.CreateSeatsCommand.SeatTemplateCommand;
 import com.firstticket.bookingservice.seat.domain.Seat;
 import com.firstticket.bookingservice.seat.domain.SeatId;
 import com.firstticket.bookingservice.seat.domain.SeatRepository;
+import com.firstticket.bookingservice.seat.domain.SeatType;
+import com.firstticket.bookingservice.seat.domain.SeatedInfo;
+import com.firstticket.bookingservice.seat.domain.Section;
+import com.firstticket.bookingservice.seat.domain.StandingInfo;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import com.firstticket.bookingservice.seat.domain.service.SeatManager;
@@ -10,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +26,41 @@ public class SeatCommandService {
 
     private final SeatRepository seatRepository;
     private final SeatManager seatManager;
+
+    @Transactional
+    public void createSeats(CreateSeatsCommand command) {
+        List<Seat> seats = new ArrayList<>();
+
+        for (SeatTemplateCommand template : command.seatTemplates()) {
+            Section section = Section.of(template.sectionId(), template.sectionName());
+
+            if (template.seatType() == SeatType.SEATED) {
+                for (int row = 1; row <= template.rowCount(); row++) {
+                    for (int col = 1; col <= template.colCount(); col++) {
+                        seats.add(Seat.createSeated(
+                            command.programId(),
+                            command.scheduleId(),
+                            section,
+                            SeatedInfo.of(row, col),
+                            template.price()
+                        ));
+                    }
+                }
+            } else if (template.seatType() == SeatType.STANDING) {
+                for (int c = 1; c <= template.capacity(); c++) {
+                    seats.add(Seat.createStanding(
+                        command.programId(),
+                        command.scheduleId(),
+                        section,
+                        StandingInfo.of(c),
+                        template.price()
+                    ));
+                }
+            }
+        }
+
+        seatRepository.saveAll(seats);
+    }
 
     @Transactional
     public void holdSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
