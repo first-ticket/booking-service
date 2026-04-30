@@ -1,9 +1,11 @@
 package com.firstticket.bookingservice.seat.presentation;
 
+import com.firstticket.bookingservice.global.annotation.BookingToken;
+import com.firstticket.bookingservice.global.token.BookingTokenClaims;
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.application.SeatQueryService;
-import com.firstticket.bookingservice.seat.application.dto.result.SeatResult;
 import com.firstticket.bookingservice.seat.presentation.dto.request.SeatIdsRequest;
+import com.firstticket.bookingservice.seat.presentation.dto.response.HeldSeatResponse;
 import com.firstticket.bookingservice.seat.presentation.dto.response.SeatResponse;
 import com.firstticket.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -34,6 +36,17 @@ public class SeatController {
     ) {
         return ApiResponse.success(SeatSuccessCode.SEAT_LIST_OK,
             SeatResponse.from(seatQueryService.getSeatList(scheduleId)));
+    }
+
+    @GetMapping("/schedules/{scheduleId}/hold")
+    public ResponseEntity<ApiResponse<HeldSeatResponse>> getHeldSeatList(
+        @PathVariable UUID scheduleId,
+        @BookingToken BookingTokenClaims claims,
+        @RequestHeader("Booking-Session-Token") String sessionToken
+    ) {
+        String token = sessionToken.startsWith("Bearer ") ? sessionToken.substring(7).trim() : sessionToken;
+        return ApiResponse.success(SeatSuccessCode.SEAT_HELD_LIST_OK,
+            HeldSeatResponse.from(seatQueryService.getHeldSeats(scheduleId, token)));
     }
 
     @PostMapping("/schedules/{scheduleId}/hold")

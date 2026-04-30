@@ -14,7 +14,8 @@ public enum SeatSuccessCode implements SuccessCode {
     SEAT_HOLD_VALID(HttpStatus.OK, "좌석 선점이 유효합니다."),
     SEAT_RESERVED(HttpStatus.OK, "좌석이 확정되었습니다."),
     SEAT_LIST_OK(HttpStatus.OK, "좌석 목록 조회에 성공했습니다."),
-    SEAT_REMAINING_OK(HttpStatus.OK, "잔여 좌석 수 조회에 성공했습니다.");
+    SEAT_REMAINING_OK(HttpStatus.OK, "잔여 좌석 수 조회에 성공했습니다."),
+    SEAT_HELD_LIST_OK(HttpStatus.OK, "선점 중인 좌석 조회에 성공했습니다.");
 
     private final HttpStatus status;
     private final String message;
