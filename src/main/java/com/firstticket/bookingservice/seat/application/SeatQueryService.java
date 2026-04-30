@@ -5,6 +5,8 @@ import com.firstticket.bookingservice.seat.domain.Seat;
 import com.firstticket.bookingservice.seat.domain.SeatId;
 import com.firstticket.bookingservice.seat.domain.SeatRepository;
 import com.firstticket.bookingservice.seat.domain.SeatStatus;
+import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
+import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,10 @@ public class SeatQueryService {
     @Transactional(readOnly = true)
     public SeatResult getSeatList(UUID scheduleId) {
         List<Seat> seats = seatRepository.findByScheduleId(scheduleId);
+        if (seats.isEmpty()) {
+            throw new SeatException(SeatErrorCode.SEAT_NOT_FOUND);
+        }
+
         Set<SeatId> heldSeatIds = seatRepository.findHeldSeatIds(
             seats.stream().map(Seat::getId).toList()
         );
