@@ -3,6 +3,7 @@ package com.firstticket.bookingservice.seat.infrastructure.persistence;
 import com.firstticket.bookingservice.seat.domain.Seat;
 import com.firstticket.bookingservice.seat.domain.SeatId;
 import com.firstticket.bookingservice.seat.domain.SeatRepository;
+import com.firstticket.bookingservice.seat.domain.query.SeatRemainingCount;
 import com.firstticket.bookingservice.seat.infrastructure.redis.SeatRedisRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.repository.Query;
@@ -47,5 +48,9 @@ public class SeatRepositoryImpl implements SeatRepository {
         return redisRepository.findHeldSeatIds(seatIds);
     }
 
+    @Override
+    public List<SeatRemainingCount> countAvailableByProgramId(UUID programId) {
+        return jpaRepository.countAvailableByProgramId(programId);
+    }
 
 }

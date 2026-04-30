@@ -1,5 +1,6 @@
 package com.firstticket.bookingservice.seat.application;
 
+import com.firstticket.bookingservice.seat.application.dto.result.SeatRemainingResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatResult;
 import com.firstticket.bookingservice.seat.domain.Seat;
 import com.firstticket.bookingservice.seat.domain.SeatId;
@@ -37,6 +38,13 @@ public class SeatQueryService {
         List<SeatResult.SectionItem> sections = groupBySection(seats, heldSeatIds);
 
         return SeatResult.of(scheduleId, totalRemaining, sections);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatRemainingResult> getRemainingCounts(UUID programId) {
+        return seatRepository.countAvailableByProgramId(programId).stream()
+            .map(count -> new SeatRemainingResult(count.scheduleId(), (int) count.remainingCount()))
+            .toList();
     }
 
     private int countAvailable(List<Seat> seats) {

@@ -1,5 +1,6 @@
 package com.firstticket.bookingservice.seat.infrastructure.redis;
 
+import com.firstticket.bookingservice.global.token.BookingTokenProvider;
 import com.firstticket.bookingservice.seat.domain.SeatId;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -24,7 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Testcontainers
+@TestPropertySource(properties = {
+    "spring.kafka.consumer.group-id=test-group"
+})
 class RedissonSeatHoldManagerTest {
+
+    @MockitoBean
+    private BookingTokenProvider bookingTokenProvider;
 
     @Container
     static RedisContainer redis = new RedisContainer(

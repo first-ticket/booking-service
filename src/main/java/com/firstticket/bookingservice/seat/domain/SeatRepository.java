@@ -1,5 +1,7 @@
 package com.firstticket.bookingservice.seat.domain;
 
+import com.firstticket.bookingservice.seat.domain.query.SeatRemainingCount;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -16,4 +18,6 @@ public interface SeatRepository {
     List<Seat> saveAll(List<Seat> seats);
 
     Set<SeatId> findHeldSeatIds(List<SeatId> seatIds);
+
+    List<SeatRemainingCount> countAvailableByProgramId(UUID programId);
 }
