@@ -22,7 +22,8 @@ public interface SeatJpaRepository extends JpaRepository<Seat, SeatId> {
     @Query(
         "SELECT new com.firstticket.bookingservice.seat.domain.query.SeatRemainingCount(s.scheduleId, COUNT(s)) " +
             "FROM Seat s " +
-            "WHERE s.programId = :programId AND s.status = 'AVAILABLE' " +
+            "WHERE s.programId = :programId " +
+            "AND s.status = com.firstticket.bookingservice.seat.domain.SeatStatus.AVAILABLE " +
             "GROUP BY s.scheduleId"
     )
     List<SeatRemainingCount> countAvailableByProgramId(@Param("programId") UUID programId);
