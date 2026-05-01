@@ -4,7 +4,7 @@ import com.firstticket.bookingservice.global.token.BookingTokenClaims;
 import com.firstticket.bookingservice.global.token.BookingTokenProvider;
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.application.SeatQueryService;
-import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatResult;
+import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatItemResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatResult;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
@@ -133,26 +133,23 @@ class SeatControllerTest extends RestDocsSupport {
     @DisplayName("선점 중인 좌석 목록 조회 성공")
     void getHeldSeatList_success() throws Exception {
         UUID scheduleId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
 
-        HeldSeatResult mockResult = HeldSeatResult.of(
-            scheduleId,
-            List.of(
-                new HeldSeatResult.SeatedItem(UUID.randomUUID(), "A구역", 1, 1, 50000),
-                new HeldSeatResult.StandingItem(UUID.randomUUID(), "B구역", 1, 30000)
-            )
+        List<HeldSeatItemResult> mockResult = List.of(
+            new HeldSeatItemResult(UUID.randomUUID(), "A구역 1행 1열", 50000),
+            new HeldSeatItemResult(UUID.randomUUID(), "B구역 1번", 30000)
         );
 
         given(seatQueryService.getHeldSeats(any(UUID.class), any(String.class)))
             .willReturn(mockResult);
-
-        UUID userId = UUID.randomUUID();
 
         given(bookingTokenProvider.validateSessionToken(any(String.class)))
             .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
 
         mockMvc.perform(RestDocumentationRequestBuilders
                 .get("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
-                .header("X-User-Id", userId)  // 토큰의 userId와 동일하게
+                .header("X-User-Id", userId)
+                .header("Authorization", "Bearer test-access-token")
                 .header("Booking-Session-Token", "Bearer test-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
@@ -162,7 +159,7 @@ class SeatControllerTest extends RestDocsSupport {
                     parameterWithName("scheduleId").description("회차 ID")
                 ),
                 requestHeaders(
-                    headerWithName("X-User-Id").description("사용자 ID (게이트웨이 주입)"),
+                    headerWithName("Authorization").description("JWT access token"),
                     headerWithName("Booking-Session-Token").description("예매 세션 토큰")
                 ),
                 responseFields(
@@ -170,13 +167,9 @@ class SeatControllerTest extends RestDocsSupport {
                     fieldWithPath("code").description("응답 코드"),
                     fieldWithPath("message").description("응답 메시지"),
                     fieldWithPath("timestamp").description("응답 시간"),
-                    fieldWithPath("data.scheduleId").description("회차 ID"),
-                    fieldWithPath("data.seats[].seatId").description("좌석 ID"),
-                    fieldWithPath("data.seats[].sectionName").description("구역명"),
-                    fieldWithPath("data.seats[].price").description("좌석 가격"),
-                    fieldWithPath("data.seats[].rowNum").description("행 번호 (지정석만)").optional(),
-                    fieldWithPath("data.seats[].colNum").description("열 번호 (지정석만)").optional(),
-                    fieldWithPath("data.seats[].entryNum").description("입장 번호 (스탠딩석만)").optional()
+                    fieldWithPath("data[].seatId").description("좌석 ID"),
+                    fieldWithPath("data[].seatInfo").description("좌석 정보 (예: A구역 1행 1열, B구역 5번)"),
+                    fieldWithPath("data[].price").description("좌석 가격")
                 )
             ));
     }

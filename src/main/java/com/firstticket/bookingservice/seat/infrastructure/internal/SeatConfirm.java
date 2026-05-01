@@ -1,7 +1,8 @@
 package com.firstticket.bookingservice.seat.infrastructure.internal;
 
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
-import com.firstticket.bookingservice.seat.domain.exception.SeatException;
+import com.firstticket.bookingservice.seat.application.SeatQueryService;
+import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatItemResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class SeatConfirm {
 
     private final SeatCommandService seatCommandService;
+    private final SeatQueryService seatQueryService;
 
     public void validateHold(List<UUID> seatIds, UUID userId, String sessionId) {
         seatCommandService.validateHold(seatIds, userId, sessionId);
@@ -23,5 +25,9 @@ public class SeatConfirm {
 
     public void reserveSeat(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         seatCommandService.reserveSeats(seatIds, scheduleId, userId, sessionId);
+    }
+
+    public List<HeldSeatItemResult> getHeldSeats(UUID scheduleId, String sessionId) {
+        return seatQueryService.getHeldSeats(scheduleId, sessionId);
     }
 }

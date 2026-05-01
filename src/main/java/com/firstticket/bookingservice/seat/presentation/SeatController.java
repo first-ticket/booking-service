@@ -5,7 +5,7 @@ import com.firstticket.bookingservice.global.token.BookingTokenClaims;
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.application.SeatQueryService;
 import com.firstticket.bookingservice.seat.presentation.dto.request.SeatIdsRequest;
-import com.firstticket.bookingservice.seat.presentation.dto.response.HeldSeatResponse;
+import com.firstticket.bookingservice.seat.presentation.dto.response.HeldSeatItemResponse;
 import com.firstticket.bookingservice.seat.presentation.dto.response.SeatResponse;
 import com.firstticket.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -39,14 +40,16 @@ public class SeatController {
     }
 
     @GetMapping("/schedules/{scheduleId}/hold")
-    public ResponseEntity<ApiResponse<HeldSeatResponse>> getHeldSeatList(
+    public ResponseEntity<ApiResponse<List<HeldSeatItemResponse>>> getHeldSeatList(
         @PathVariable UUID scheduleId,
         @BookingToken BookingTokenClaims claims,
         @RequestHeader("Booking-Session-Token") String sessionToken
     ) {
         String token = sessionToken.startsWith("Bearer ") ? sessionToken.substring(7).trim() : sessionToken;
         return ApiResponse.success(SeatSuccessCode.SEAT_HELD_LIST_OK,
-            HeldSeatResponse.from(seatQueryService.getHeldSeats(scheduleId, token)));
+            seatQueryService.getHeldSeats(scheduleId, token).stream()
+                .map(HeldSeatItemResponse::from)
+                .toList());
     }
 
     @PostMapping("/schedules/{scheduleId}/hold")

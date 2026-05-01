@@ -1,6 +1,6 @@
 package com.firstticket.bookingservice.seat.application;
 
-import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatResult;
+import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatItemResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatRemainingResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatResult;
 import com.firstticket.bookingservice.seat.domain.Seat;
@@ -44,21 +44,19 @@ public class SeatQueryService {
     }
 
     @Transactional(readOnly = true)
-    public HeldSeatResult getHeldSeats(UUID scheduleId, String sessionId) {
+    public List<HeldSeatItemResult> getHeldSeats(UUID scheduleId, String sessionId) {
         List<SeatId> heldSeatIds = seatManager.getHeldSeats(sessionId);
 
         // 선점 중인 좌석이 없으면 빈 리스트 반환
         if (heldSeatIds.isEmpty()) {
-            return new HeldSeatResult(scheduleId, List.of());
+            return List.of();
         }
 
         List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(heldSeatIds, scheduleId);
 
-        List<HeldSeatResult.SeatItem> seatItems = seats.stream()
-            .map(this::toHeldSeatItem)
+        return seats.stream()
+            .map(HeldSeatItemResult::from)
             .toList();
-
-        return HeldSeatResult.of(scheduleId, seatItems);
     }
 
     @Transactional(readOnly = true)
@@ -97,13 +95,6 @@ public class SeatQueryService {
         return switch (seat.getSeatType()) {
             case SEATED -> SeatResult.SeatedItem.from(seat, status);
             case STANDING -> SeatResult.StandingItem.from(seat, status);
-        };
-    }
-
-    private HeldSeatResult.SeatItem toHeldSeatItem(Seat seat) {
-        return switch (seat.getSeatType()) {
-            case SEATED -> HeldSeatResult.SeatedItem.from(seat);
-            case STANDING -> HeldSeatResult.StandingItem.from(seat);
         };
     }
 }
