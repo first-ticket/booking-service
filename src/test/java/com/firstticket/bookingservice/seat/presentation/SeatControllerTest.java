@@ -1,8 +1,10 @@
 package com.firstticket.bookingservice.seat.presentation;
 
+import com.firstticket.bookingservice.global.token.BookingTokenClaims;
 import com.firstticket.bookingservice.global.token.BookingTokenProvider;
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.application.SeatQueryService;
+import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatItemResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatResult;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
@@ -17,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -122,6 +125,51 @@ class SeatControllerTest extends RestDocsSupport {
                     fieldWithPath("code").description("에러 코드"),
                     fieldWithPath("message").description("에러 메시지"),
                     fieldWithPath("timestamp").description("응답 시간")
+                )
+            ));
+    }
+
+    @Test
+    @DisplayName("선점 중인 좌석 목록 조회 성공")
+    void getHeldSeatList_success() throws Exception {
+        UUID scheduleId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        List<HeldSeatItemResult> mockResult = List.of(
+            new HeldSeatItemResult(UUID.randomUUID(), "A구역 1행 1열", 50000),
+            new HeldSeatItemResult(UUID.randomUUID(), "B구역 1번", 30000)
+        );
+
+        given(seatQueryService.getHeldSeats(any(UUID.class), any(String.class)))
+            .willReturn(mockResult);
+
+        given(bookingTokenProvider.validateSessionToken(any(String.class)))
+            .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
+
+        mockMvc.perform(RestDocumentationRequestBuilders
+                .get("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
+                .header("X-User-Id", userId)
+                .header("Authorization", "Bearer test-access-token")
+                .header("Booking-Session-Token", "Bearer test-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").value("SEAT_HELD_LIST_OK"))
+            .andDo(document("seat-held-list-success",
+                pathParameters(
+                    parameterWithName("scheduleId").description("회차 ID")
+                ),
+                requestHeaders(
+                    headerWithName("Authorization").description("JWT access token"),
+                    headerWithName("Booking-Session-Token").description("예매 세션 토큰")
+                ),
+                responseFields(
+                    fieldWithPath("success").description("성공 여부"),
+                    fieldWithPath("code").description("응답 코드"),
+                    fieldWithPath("message").description("응답 메시지"),
+                    fieldWithPath("timestamp").description("응답 시간"),
+                    fieldWithPath("data[].seatId").description("좌석 ID"),
+                    fieldWithPath("data[].seatInfo").description("좌석 정보 (예: A구역 1행 1열, B구역 5번)"),
+                    fieldWithPath("data[].price").description("좌석 가격")
                 )
             ));
     }

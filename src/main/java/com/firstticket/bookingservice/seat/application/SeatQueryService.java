@@ -1,5 +1,6 @@
 package com.firstticket.bookingservice.seat.application;
 
+import com.firstticket.bookingservice.seat.application.dto.result.HeldSeatItemResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatRemainingResult;
 import com.firstticket.bookingservice.seat.application.dto.result.SeatResult;
 import com.firstticket.bookingservice.seat.domain.Seat;
@@ -8,6 +9,7 @@ import com.firstticket.bookingservice.seat.domain.SeatRepository;
 import com.firstticket.bookingservice.seat.domain.SeatStatus;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
+import com.firstticket.bookingservice.seat.domain.service.SeatManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class SeatQueryService {
 
     private final SeatRepository seatRepository;
+    private final SeatManager seatManager;
 
     @Transactional(readOnly = true)
     public SeatResult getSeatList(UUID scheduleId) {
@@ -38,6 +41,22 @@ public class SeatQueryService {
         List<SeatResult.SectionItem> sections = groupBySection(seats, heldSeatIds);
 
         return SeatResult.of(scheduleId, totalRemaining, sections);
+    }
+
+    @Transactional(readOnly = true)
+    public List<HeldSeatItemResult> getHeldSeats(UUID scheduleId, String sessionId) {
+        List<SeatId> heldSeatIds = seatManager.getHeldSeats(sessionId);
+
+        // 선점 중인 좌석이 없으면 빈 리스트 반환
+        if (heldSeatIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Seat> seats = seatRepository.findAllByIdInAndScheduleId(heldSeatIds, scheduleId);
+
+        return seats.stream()
+            .map(HeldSeatItemResult::from)
+            .toList();
     }
 
     @Transactional(readOnly = true)
