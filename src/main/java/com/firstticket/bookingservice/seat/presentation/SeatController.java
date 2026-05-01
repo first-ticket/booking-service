@@ -65,7 +65,7 @@ public class SeatController {
     ) {
         AuthContext.requireRole(UserRole.CUSTOMER);
         String token = BookingTokenExtractor.extract(sessionToken);
-        seatCommandService.holdSeats(request.seatIds(), scheduleId, claims.userId(), token);
+        seatCommandService.holdSeats(request.seatIds(), claims.programId(), scheduleId, claims.userId(), token);
         return ApiResponse.success(SeatSuccessCode.SEAT_HELD);
     }
 

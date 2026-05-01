@@ -16,8 +16,11 @@ public class SeatManager {
 
     private final SeatHoldManager seatHoldManager;
 
-    public void holdSeats(List<Seat> seats, UUID scheduleId, UUID userId, String sessionId) {
+    public void holdSeats(List<Seat> seats, UUID programId, UUID scheduleId, UUID userId, String sessionId) {
         for (Seat seat : seats) {
+            if (!seat.getProgramId().equals(programId)) {
+                throw new SeatException(SeatErrorCode.SEAT_PROGRAM_MISMATCH);
+            }
             if (!seat.isAvailable()) {
                 throw new SeatException(SeatErrorCode.SEAT_NOT_AVAILABLE);
             }

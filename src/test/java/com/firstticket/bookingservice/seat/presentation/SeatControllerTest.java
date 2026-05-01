@@ -179,7 +179,7 @@ class SeatControllerTest extends RestDocsSupport {
     void holdSeats_success() throws Exception {
         willDoNothing()
             .given(seatCommandService)
-            .holdSeats(any(), any(UUID.class), any(UUID.class), any(String.class));
+            .holdSeats(any(), any(UUID.class), any(UUID.class), any(UUID.class), any(String.class));
 
         given(bookingTokenProvider.validateSessionToken(any(String.class)))
             .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
@@ -224,7 +224,7 @@ class SeatControllerTest extends RestDocsSupport {
     void holdSeats_alreadyHeld() throws Exception {
         willThrow(new SeatException(SeatErrorCode.SEAT_ALREADY_HELD))
             .given(seatCommandService)
-            .holdSeats(any(), any(UUID.class), any(UUID.class), any(String.class));
+            .holdSeats(any(), any(UUID.class), any(UUID.class), any(UUID.class), any(String.class));
 
         given(bookingTokenProvider.validateSessionToken(any(String.class)))
             .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
