@@ -1,0 +1,76 @@
+= Booking Service API
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+== 공통 응답 형식
+
+[source,json]
+----
+{
+  "success": true,
+  "code": "SUCCESS_CODE",
+  "message": "응답 메시지",
+  "timestamp": "2025-04-21T10:05:00",
+  "data": {}
+}
+----
+
+== 좌석 API
+
+=== 좌석 목록 조회
+
+==== 요청
+include::{snippets}/seat-list-success/http-request.adoc[]
+include::{snippets}/seat-list-success/path-parameters.adoc[]
+
+==== 응답
+include::{snippets}/seat-list-success/http-response.adoc[]
+include::{snippets}/seat-list-success/response-fields.adoc[]
+
+=== 좌석 선점
+
+==== 요청
+include::{snippets}/seat-hold-success/http-request.adoc[]
+include::{snippets}/seat-hold-success/path-parameters.adoc[]
+include::{snippets}/seat-hold-success/request-headers.adoc[]
+include::{snippets}/seat-hold-success/request-fields.adoc[]
+
+==== 응답
+include::{snippets}/seat-hold-success/http-response.adoc[]
+include::{snippets}/seat-hold-success/response-fields.adoc[]
+
+=== 좌석 선점 취소
+
+==== 요청
+include::{snippets}/seat-release-success/http-request.adoc[]
+include::{snippets}/seat-release-success/path-parameters.adoc[]
+include::{snippets}/seat-release-success/request-headers.adoc[]
+
+==== 응답
+include::{snippets}/seat-release-success/http-response.adoc[]
+include::{snippets}/seat-release-success/response-fields.adoc[]
+
+=== 선점 중인 좌석 조회
+
+==== 요청
+include::{snippets}/seat-held-list-success/http-request.adoc[]
+include::{snippets}/seat-held-list-success/path-parameters.adoc[]
+include::{snippets}/seat-held-list-success/request-headers.adoc[]
+
+==== 응답
+include::{snippets}/seat-held-list-success/http-response.adoc[]
+include::{snippets}/seat-held-list-success/response-fields.adoc[]
+
+=== 회차별 잔여 좌석 수 조회
+
+==== 요청
+include::{snippets}/seat-remaining-success/http-request.adoc[]
+include::{snippets}/seat-remaining-success/path-parameters.adoc[]
+
+==== 응답
+include::{snippets}/seat-remaining-success/http-response.adoc[]
+include::{snippets}/seat-remaining-success/response-fields.adoc[]
