@@ -4,6 +4,7 @@ import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.global.annotation.BookingToken;
 import com.firstticket.bookingservice.global.token.BookingTokenClaims;
+import com.firstticket.bookingservice.global.token.BookingTokenExtractor;
 import com.firstticket.bookingservice.global.token.BookingTokenProvider;
 import java.util.UUID;
 
@@ -41,7 +42,7 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
             throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
         }
 
-        String token = sessionHeader.substring(7).trim();
+        String token = BookingTokenExtractor.extract(sessionHeader);
         if(token.isEmpty()){
             throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
         }
