@@ -38,8 +38,13 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
         // 세션 토큰 검증
         String sessionHeader = webRequest.getHeader("Booking-Session-Token");
 
-        if (sessionHeader == null || !sessionHeader.startsWith("Bearer ")) {
+        // 헤더 자체가 없음
+        if (sessionHeader == null) {
             throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
+        }
+        // 헤더는 있지만 Bearer 포맷이 아님
+        if (!sessionHeader.startsWith("Bearer ")) {
+            throw new BookingException(BookingErrorCode.INVALID_SESSION_TOKEN);
         }
 
         String token = BookingTokenExtractor.extract(sessionHeader);
