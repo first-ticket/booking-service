@@ -4,8 +4,11 @@ import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.global.annotation.BookingToken;
 import com.firstticket.bookingservice.global.token.BookingTokenClaims;
+import com.firstticket.bookingservice.global.token.BookingTokenExtractor;
 import com.firstticket.bookingservice.global.token.BookingTokenProvider;
 import java.util.UUID;
+
+import com.firstticket.common.web.AuthContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
@@ -32,12 +35,6 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
     public BookingTokenClaims resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                               NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
 
-        String xUserId = webRequest.getHeader("X-User-Id");
-
-        if(xUserId == null){
-            throw new BookingException(BookingErrorCode.EMPTY_X_USER_ID);
-        }
-
         // 세션 토큰 검증
         String sessionHeader = webRequest.getHeader("Booking-Session-Token");
 
@@ -45,7 +42,7 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
             throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
         }
 
-        String token = sessionHeader.substring(7).trim();
+        String token = BookingTokenExtractor.extract(sessionHeader);
         if(token.isEmpty()){
             throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
         }
@@ -53,14 +50,9 @@ public class BookingTokenResolver implements HandlerMethodArgumentResolver {
         // 세션 토큰 전용 시크릿으로 검증 후 반환
         BookingTokenClaims sessionTokenClaims = tokenProvider.validateSessionToken(token);
 
-        UUID userId;
-        try {
-            userId = UUID.fromString(xUserId);
-        } catch (IllegalArgumentException e) {
-            throw new BookingException(BookingErrorCode.INVALID_USER_ID);
-        }
+        UUID userId = AuthContext.getUserId();
 
-        if(!sessionTokenClaims.userId().equals(userId)){
+        if (!sessionTokenClaims.userId().equals(userId)) {
             throw new BookingException(BookingErrorCode.INVALID_USER_ID);
         }
 

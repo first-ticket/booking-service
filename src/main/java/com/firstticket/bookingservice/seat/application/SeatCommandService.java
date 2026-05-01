@@ -63,8 +63,8 @@ public class SeatCommandService {
     }
 
     @Transactional
-    public void holdSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
-        seatManager.holdSeats(getSeats(seatIds, scheduleId), scheduleId, userId, sessionId);
+    public void holdSeats(List<UUID> seatIds, UUID programId, UUID scheduleId, UUID userId, String sessionId) {
+        seatManager.holdSeats(getSeats(seatIds, scheduleId), programId, scheduleId, userId, sessionId);
     }
 
     @Transactional

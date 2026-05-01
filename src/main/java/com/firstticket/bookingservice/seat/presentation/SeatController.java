@@ -2,12 +2,15 @@ package com.firstticket.bookingservice.seat.presentation;
 
 import com.firstticket.bookingservice.global.annotation.BookingToken;
 import com.firstticket.bookingservice.global.token.BookingTokenClaims;
+import com.firstticket.bookingservice.global.token.BookingTokenExtractor;
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.application.SeatQueryService;
 import com.firstticket.bookingservice.seat.presentation.dto.request.SeatIdsRequest;
 import com.firstticket.bookingservice.seat.presentation.dto.response.HeldSeatItemResponse;
 import com.firstticket.bookingservice.seat.presentation.dto.response.SeatResponse;
 import com.firstticket.common.response.ApiResponse;
+import com.firstticket.common.web.AuthContext;
+import com.firstticket.common.web.UserRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +48,8 @@ public class SeatController {
         @BookingToken BookingTokenClaims claims,
         @RequestHeader("Booking-Session-Token") String sessionToken
     ) {
-        String token = sessionToken.startsWith("Bearer ") ? sessionToken.substring(7).trim() : sessionToken;
+        AuthContext.requireRole(UserRole.CUSTOMER);
+        String token = BookingTokenExtractor.extract(sessionToken);
         return ApiResponse.success(SeatSuccessCode.SEAT_HELD_LIST_OK,
             seatQueryService.getHeldSeats(scheduleId, token).stream()
                 .map(HeldSeatItemResponse::from)
@@ -56,20 +60,24 @@ public class SeatController {
     public ResponseEntity<ApiResponse<Void>> holdSeats(
         @PathVariable UUID scheduleId,
         @Valid @RequestBody SeatIdsRequest request,
-        @RequestHeader("X-User-Id") UUID userId,
-        @RequestHeader("X-Session-Id") String sessionId
+        @BookingToken BookingTokenClaims claims,
+        @RequestHeader("Booking-Session-Token") String sessionToken
     ) {
-        seatCommandService.holdSeats(request.seatIds(), scheduleId, userId, sessionId);
+        AuthContext.requireRole(UserRole.CUSTOMER);
+        String token = BookingTokenExtractor.extract(sessionToken);
+        seatCommandService.holdSeats(request.seatIds(), claims.programId(), scheduleId, claims.userId(), token);
         return ApiResponse.success(SeatSuccessCode.SEAT_HELD);
     }
 
     @DeleteMapping("/schedules/{scheduleId}/hold")
     public ResponseEntity<ApiResponse<Void>> releaseSeats(
         @PathVariable UUID scheduleId,
-        @RequestHeader("X-User-Id") UUID userId,
-        @RequestHeader("X-Session-Id") String sessionId
+        @BookingToken BookingTokenClaims claims,
+        @RequestHeader("Booking-Session-Token") String sessionToken
     ) {
-        seatCommandService.releaseSeats(scheduleId, userId, sessionId);
+        AuthContext.requireRole(UserRole.CUSTOMER);
+        String token = BookingTokenExtractor.extract(sessionToken);
+        seatCommandService.releaseSeats(scheduleId, claims.userId(), token);
         return ApiResponse.success(SeatSuccessCode.SEAT_RELEASED);
     }
 }

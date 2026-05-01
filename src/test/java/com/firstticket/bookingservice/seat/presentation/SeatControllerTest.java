@@ -54,7 +54,6 @@ class SeatControllerTest extends RestDocsSupport {
 
     private final UUID scheduleId = UUID.randomUUID();
     private final UUID userId = UUID.randomUUID();
-    private final String sessionId = UUID.randomUUID().toString();
 
     @Test
     @DisplayName("좌석 목록 조회 성공")
@@ -149,6 +148,7 @@ class SeatControllerTest extends RestDocsSupport {
         mockMvc.perform(RestDocumentationRequestBuilders
                 .get("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
                 .header("X-User-Id", userId)
+                .header("X-User-Role", "CUSTOMER")
                 .header("Authorization", "Bearer test-access-token")
                 .header("Booking-Session-Token", "Bearer test-token"))
             .andExpect(status().isOk())
@@ -179,12 +179,17 @@ class SeatControllerTest extends RestDocsSupport {
     void holdSeats_success() throws Exception {
         willDoNothing()
             .given(seatCommandService)
-            .holdSeats(any(), any(UUID.class), any(UUID.class), any(String.class));
+            .holdSeats(any(), any(UUID.class), any(UUID.class), any(UUID.class), any(String.class));
+
+        given(bookingTokenProvider.validateSessionToken(any(String.class)))
+            .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
 
         mockMvc.perform(RestDocumentationRequestBuilders
                 .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
                 .header("X-User-Id", userId)
-                .header("X-Session-Id", sessionId)
+                .header("X-User-Role", "CUSTOMER")
+                .header("Authorization", "Bearer test-access-token")
+                .header("Booking-Session-Token", "Bearer test-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -196,8 +201,8 @@ class SeatControllerTest extends RestDocsSupport {
             .andExpect(jsonPath("$.code").value("SEAT_HELD"))
             .andDo(document("seat-hold-success",
                 requestHeaders(
-                    headerWithName("X-User-Id").description("사용자 ID"),
-                    headerWithName("X-Session-Id").description("예매 세션 ID")
+                    headerWithName("Authorization").description("JWT access token"),
+                    headerWithName("Booking-Session-Token").description("예매 세션 토큰")
                 ),
                 pathParameters(
                     parameterWithName("scheduleId").description("회차 ID")
@@ -219,12 +224,17 @@ class SeatControllerTest extends RestDocsSupport {
     void holdSeats_alreadyHeld() throws Exception {
         willThrow(new SeatException(SeatErrorCode.SEAT_ALREADY_HELD))
             .given(seatCommandService)
-            .holdSeats(any(),any(UUID.class), any(UUID.class), any(String.class));
+            .holdSeats(any(), any(UUID.class), any(UUID.class), any(UUID.class), any(String.class));
+
+        given(bookingTokenProvider.validateSessionToken(any(String.class)))
+            .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
 
         mockMvc.perform(RestDocumentationRequestBuilders
                 .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
                 .header("X-User-Id", userId)
-                .header("X-Session-Id", sessionId)
+                .header("X-User-Role", "CUSTOMER")
+                .header("Authorization", "Bearer test-access-token")
+                .header("Booking-Session-Token", "Bearer test-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -244,23 +254,62 @@ class SeatControllerTest extends RestDocsSupport {
     }
 
     @Test
+    @DisplayName("다른 프로그램 좌석 선점 시도 시 401 반환")
+    void holdSeats_programMismatch() throws Exception {
+        willThrow(new SeatException(SeatErrorCode.SEAT_PROGRAM_MISMATCH))
+            .given(seatCommandService)
+            .holdSeats(any(), any(UUID.class), any(UUID.class), any(UUID.class), any(String.class));
+
+        given(bookingTokenProvider.validateSessionToken(any(String.class)))
+            .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
+
+        mockMvc.perform(RestDocumentationRequestBuilders
+                .post("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
+                .header("X-User-Id", userId)
+                .header("X-User-Role", "CUSTOMER")
+                .header("Authorization", "Bearer test-access-token")
+                .header("Booking-Session-Token", "Bearer test-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                        "seatIds": ["%s"]
+                    }
+                    """.formatted(UUID.randomUUID())))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.success").value(false))
+            .andDo(document("seat-hold-program-mismatch",
+                responseFields(
+                    fieldWithPath("success").description("성공 여부"),
+                    fieldWithPath("code").description("에러 코드"),
+                    fieldWithPath("message").description("에러 메시지"),
+                    fieldWithPath("timestamp").description("응답 시간")
+                )
+            ));
+    }
+
+    @Test
     @DisplayName("좌석 선점 취소 성공")
     void releaseSeats_success() throws Exception {
         willDoNothing()
             .given(seatCommandService)
             .releaseSeats(any(UUID.class), any(UUID.class), any(String.class));
 
+        given(bookingTokenProvider.validateSessionToken(any(String.class)))
+            .willReturn(new BookingTokenClaims(userId, UUID.randomUUID(), new Date()));
+
         mockMvc.perform(RestDocumentationRequestBuilders
                 .delete("/api/v1/seats/schedules/{scheduleId}/hold", scheduleId)
                 .header("X-User-Id", userId)
-                .header("X-Session-Id", sessionId))
+                .header("X-User-Role", "CUSTOMER")
+                .header("Authorization", "Bearer test-access-token")
+                .header("Booking-Session-Token", "Bearer test-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.code").value("SEAT_RELEASED"))
             .andDo(document("seat-release-success",
                 requestHeaders(
-                    headerWithName("X-User-Id").description("사용자 ID"),
-                    headerWithName("X-Session-Id").description("예매 세션 ID")
+                    headerWithName("Authorization").description("JWT access token"),
+                    headerWithName("Booking-Session-Token").description("예매 세션 토큰")
                 ),
                 pathParameters(
                     parameterWithName("scheduleId").description("회차 ID")

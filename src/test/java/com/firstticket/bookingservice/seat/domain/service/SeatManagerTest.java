@@ -45,7 +45,7 @@ class SeatManagerTest {
         Seat seat2 = Seat.createSeated(programId, scheduleId, section, SeatedInfo.of(1, 2), 10000);
         List<Seat> seats = List.of(seat1, seat2);
 
-        seatManager.holdSeats(seats, scheduleId, userId, sessionId);
+        seatManager.holdSeats(seats, programId, scheduleId, userId, sessionId);
 
         verify(seatHoldManager).hold(
             seats.stream().map(Seat::getId).toList(),
@@ -61,10 +61,25 @@ class SeatManagerTest {
         reservedSeat.reserve();
         List<Seat> seats = List.of(availableSeat, reservedSeat);
 
-        assertThatThrownBy(() -> seatManager.holdSeats(seats, scheduleId, userId, sessionId))
+        assertThatThrownBy(() -> seatManager.holdSeats(seats, programId, scheduleId, userId, sessionId))
             .isInstanceOf(SeatException.class)
             .satisfies(e -> assertThat(((SeatException) e).getErrorCode())
                 .isEqualTo(SeatErrorCode.SEAT_NOT_AVAILABLE));
+
+        verify(seatHoldManager, never()).hold(anyList(), any(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("좌석 선점 실패 - 다른 프로그램의 좌석 선점 시도 시 SEAT_PROGRAM_MISMATCH 예외 발생")
+    void holdSeats_programMismatch() {
+        UUID otherProgramId = UUID.randomUUID();
+        Seat seat = Seat.createSeated(otherProgramId, scheduleId, section, SeatedInfo.of(1, 1), 10000);
+        List<Seat> seats = List.of(seat);
+
+        assertThatThrownBy(() -> seatManager.holdSeats(seats, programId, scheduleId, userId, sessionId))
+            .isInstanceOf(SeatException.class)
+            .satisfies(e -> assertThat(((SeatException) e).getErrorCode())
+                .isEqualTo(SeatErrorCode.SEAT_PROGRAM_MISMATCH));
 
         verify(seatHoldManager, never()).hold(anyList(), any(), any(), anyString());
     }
