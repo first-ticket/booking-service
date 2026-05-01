@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 
 @ExtendWith(RestDocumentationExtension.class)
 public abstract class RestDocsSupport {
@@ -18,7 +19,10 @@ public abstract class RestDocsSupport {
     @BeforeEach
     void setUp(WebApplicationContext context, RestDocumentationContextProvider provider) {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
-            .apply(documentationConfiguration(provider))
+            .apply(documentationConfiguration(provider)
+                .operationPreprocessors()
+                .withRequestDefaults(prettyPrint())
+                .withResponseDefaults(prettyPrint()))
             .build();
     }
 }
