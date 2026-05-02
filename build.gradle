@@ -87,12 +87,16 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    implementation 'io.github.openfeign.querydsl:querydsl-jpa:6.9'
+
 //    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
 //    implementation 'io.opentelemetry.exporter:opentelemetry-exporter-otlp'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    annotationProcessor 'io.github.openfeign.querydsl:querydsl-apt:6.9:jakarta'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 
     runtimeOnly 'com.h2database:h2' // 초기 빌드용
     runtimeOnly 'org.postgresql:postgresql'
@@ -124,4 +128,11 @@ tasks.named('bootBuildImage') {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += [
+        "-Aquerydsl.entityAccessors=true",
+        "-Aquerydsl.includedPackages=com.firstticket.bookingservice.booking"
+    ]
 }
