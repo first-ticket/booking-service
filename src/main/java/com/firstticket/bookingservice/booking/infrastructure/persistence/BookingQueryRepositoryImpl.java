@@ -27,6 +27,14 @@ public class BookingQueryRepositoryImpl implements BookingQueryRepository {
     @Override
     public BookingPage<BookingSummaryData> search(BookingSearchSpec spec, BookingPageRequest pageRequest) {
 
+        if(spec == null){
+            throw new IllegalArgumentException("spec must not be null"); // 코드 버그 방어(내부 호출자가 null을 넘기는 경우) : 비즈니스로직 아니므로 자바 표준 예외 적용
+        }
+
+        if(pageRequest == null){
+            throw new IllegalArgumentException("pageRequest must not be null");
+        }
+
         BooleanBuilder builder = new BooleanBuilder();
         Pageable pageable = PageRequest.of(pageRequest.page(), pageRequest.size());
 

@@ -7,7 +7,7 @@ import java.util.List;
 public record BookingDetailResult(
     String programTitle,
     BookingStatus status,
-    Long totalPrice,
+    long totalPrice,
     int totalCount,
     LocalDateTime eventStartAt,
     LocalDateTime eventEndAt,
@@ -19,7 +19,7 @@ public record BookingDetailResult(
     public static BookingDetailResult of(
         String programTitle,
         BookingStatus status,
-        Long totalPrice,
+        long totalPrice,
         int totalCount,
         LocalDateTime eventStartAt,
         LocalDateTime eventEndAt,

@@ -8,6 +8,10 @@ public record BookingPage<T>(
     int size,
     long totalElements
 ) {
+    public BookingPage {
+        content = List.copyOf(content);
+    }
+
     public <R> BookingPage<R> map(java.util.function.Function<T, R> mapper) {
         return new BookingPage<>(
             content.stream().map(mapper).toList(),
