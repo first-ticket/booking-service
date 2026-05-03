@@ -17,7 +17,8 @@
 
 === 응답 형식
 
-성공 / 실패 모두 `ApiResponse<T>` 형식으로 응답한다.
+외부 API는 성공 / 실패 모두 `ApiResponse<T>` 형식으로 응답한다.
+내부 API는 순수 DTO를 직접 반환한다.
 
 [source,json]
 ----
@@ -60,4 +61,4 @@ operation::seat-held-list-success[snippets='http-request,path-parameters,request
 
 == 회차별 잔여 좌석 수 조회 (내부 API)
 
-operation::seat-remaining-success[snippets='http-request,path-parameters,http-response,response-fields']
+operation::seat-internal-remaining-success[snippets='http-request,path-parameters,http-response,response-fields']
