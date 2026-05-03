@@ -12,4 +12,6 @@ public interface BookingRepository {
     void save(Booking booking);
 
     Optional<Booking> findById(UUID bookingId);
+
+    UUID findIdBySessionId(String sessionId);
 }

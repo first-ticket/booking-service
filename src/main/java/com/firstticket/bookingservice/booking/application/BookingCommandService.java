@@ -117,13 +117,13 @@ public class BookingCommandService {
                 booking.getUserId(),
                 booking.getSessionId()
             );
+            booking.confirm();
         }catch (BusinessException e){
             booking.cancel();
             publishEvent.paymentRefundEvent(paymentId, booking.getUserId(), bookingId);
         }
-
-        booking.confirm();
     }
+
     @Transactional
     public void paymentFailed(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new BookingException(BookingErrorCode.INVALID_BOOKING_ID));
