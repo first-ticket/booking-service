@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
+@Slf4j
 class BookingCommandServiceTest {
 
     @InjectMocks
@@ -132,11 +134,12 @@ class BookingCommandServiceTest {
             LocalDateTime.now().plusDays(10).plusHours(2),
             "올림픽공원", "서울시 송파구");
 
+        UUID bookingId = UUID.randomUUID();
         UUID paymentId = UUID.randomUUID();
 
-        given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
+        given(bookingRepository.findById(bookingId)).willReturn(Optional.of(booking));
 
-        bookingCommandService.paymentCompleted(booking.getId(), paymentId);
+        bookingCommandService.paymentCompleted(bookingId, paymentId);
 
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
     }
@@ -149,14 +152,16 @@ class BookingCommandServiceTest {
             LocalDateTime.now().plusDays(10).plusHours(2),
             "올림픽공원", "서울시 송파구");
 
+        UUID bookingId = UUID.randomUUID();
         UUID paymentId = UUID.randomUUID();
 
-        given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
+        given(bookingRepository.findById(bookingId)).willReturn(Optional.of(booking));
         willThrow(new BookingException(BookingErrorCode.INVALID_SEAT_ID))
             .given(seatOperator).reserveSeat(any(), any(), any(), any());
-        bookingCommandService.paymentCompleted(booking.getId(), paymentId);
+        bookingCommandService.paymentCompleted(bookingId, paymentId);
 
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELED);
+        then(publishEvent).should().paymentRefundEvent(paymentId, userId, bookingId);
     }
 
     @Test
@@ -167,9 +172,11 @@ class BookingCommandServiceTest {
             LocalDateTime.now().plusDays(10).plusHours(2),
             "올림픽공원", "서울시 송파구");
 
-        given(bookingRepository.findById(any())).willReturn(Optional.of(booking));
+        UUID bookingId = UUID.randomUUID();
 
-        bookingCommandService.paymentFailed(booking.getId());
+        given(bookingRepository.findById(bookingId)).willReturn(Optional.of(booking));
+
+        bookingCommandService.paymentFailed(bookingId);
 
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELED);
     }

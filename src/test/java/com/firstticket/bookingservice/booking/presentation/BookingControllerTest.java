@@ -239,7 +239,6 @@ class BookingControllerTest {
                     fieldWithPath("data.numberOfElements").description("현재 페이지 데이터 수"),
                     fieldWithPath("data.pageable").description("페이지 요청 정보"),
                     fieldWithPath("data.sort").description("정렬 정보"),
-                    fieldWithPath("data.pageable").description("페이지 요청 정보"),
                     fieldWithPath("data.pageable.pageNumber").description("페이지 번호"),
                     fieldWithPath("data.pageable.pageSize").description("페이지 크기"),
                     fieldWithPath("data.pageable.sort").description("정렬 정보"),
@@ -249,7 +248,6 @@ class BookingControllerTest {
                     fieldWithPath("data.pageable.offset").description("오프셋"),
                     fieldWithPath("data.pageable.paged").description("페이징 여부"),
                     fieldWithPath("data.pageable.unpaged").description("비페이징 여부"),
-                    fieldWithPath("data.sort").description("정렬 정보"),
                     fieldWithPath("data.sort.empty").description("정렬 조건 없음 여부"),
                     fieldWithPath("data.sort.sorted").description("정렬 여부"),
                     fieldWithPath("data.sort.unsorted").description("미정렬 여부")

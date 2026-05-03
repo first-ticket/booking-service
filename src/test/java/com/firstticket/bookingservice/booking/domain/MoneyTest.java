@@ -11,8 +11,8 @@ public class MoneyTest {
         Money originalMoney = new Money(1000L);
         Money result = originalMoney.plus(500L);
 
-        assertThat(originalMoney.getAmount() == 1000L);
-        assertThat(result.getAmount() == 1500L);
-        assertThat(!result.equals(originalMoney));
+        assertThat(originalMoney.getAmount()).isEqualTo(1000L);
+        assertThat(result.getAmount()).isEqualTo(1500L);
+        assertThat(result).isNotEqualTo(originalMoney);
     }
 }

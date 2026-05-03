@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import com.firstticket.bookingservice.booking.application.dto.result.BookingDetailResult;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingSummaryResult;
@@ -23,6 +24,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -141,6 +143,9 @@ class BookingQueryServiceTest {
         BookingPage<BookingSummaryResult> result = bookingQueryService.searchMyBookings(
             userId, "CONFIRMED", null, null, 0, 10);
 
+        ArgumentCaptor<BookingSearchSpec> specCaptor = ArgumentCaptor.forClass(BookingSearchSpec.class);
+        then(bookingQueryRepository).should().search(specCaptor.capture(), any());
+        assertThat(specCaptor.getValue().status()).isEqualTo(BookingStatus.CONFIRMED);
         assertThat(result.content().get(0).status()).isEqualTo(BookingStatus.CONFIRMED);
     }
 }

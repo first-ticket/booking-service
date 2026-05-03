@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 
 import com.firstticket.bookingservice.booking.application.BookingQueryService;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingDetailResult;
+import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.query.BookingQueryRepository;
 import java.time.LocalDateTime;
@@ -55,7 +56,8 @@ class BookingQueryServiceTest {
         given(bookingRepository.findById(bookingId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingQueryService.getBookingDetail(userId, bookingId))
-            .isInstanceOf(BookingException.class);
+            .isInstanceOfSatisfying(BookingException.class,
+                ex -> assertThat(ex.getErrorCode()).isEqualTo(BookingErrorCode.INVALID_BOOKING_ID));
     }
 
     @Test
@@ -64,7 +66,8 @@ class BookingQueryServiceTest {
         given(bookingRepository.findById(bookingId)).willReturn(Optional.of(booking));
 
         assertThatThrownBy(() -> bookingQueryService.getBookingDetail(anotherUserId, bookingId))
-            .isInstanceOf(BookingException.class);
+            .isInstanceOfSatisfying(BookingException.class,
+                ex -> assertThat(ex.getErrorCode()).isEqualTo(BookingErrorCode.INVALID_AUTHORIZATION));
     }
 
     @Test
