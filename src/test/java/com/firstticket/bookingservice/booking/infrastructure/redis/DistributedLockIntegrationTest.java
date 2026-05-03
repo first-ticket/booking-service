@@ -114,23 +114,26 @@ class DistributedLockIntegrationTest {
         CountDownLatch latch = new CountDownLatch(threadCount); // CountDownLatch : 카운터가 0이 될 때까지 메인 스레드를 기다리게하는 도구
 
         List<Throwable> failures = new java.util.concurrent.CopyOnWriteArrayList<>();
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> { // 스레드 제출 -> 각 스레드는 백그라운드에서 실행, 메인스레드는 스레드 제출만 하고 다음 줄로 넘어감 : executor.submit(()->{}) 5번 실행 후 latch.await()
-                try {
-                    testLockService.executeWithLock("same-key"); // 5개의 스레드가 동시에 executeWithLock("same-key") 호출
-                } catch (Exception e) {
-                    failures.add(e);
-                } finally {
-                    latch.countDown(); // 각 스레드가 락 해제 후 카운터가 1 감소 : 0이 될때까지 메인 스레드가 각 스레드들을 대기
-                }
-            });
-        }
-        boolean result = latch.await(10, TimeUnit.SECONDS);
-        assertThat(result).isTrue(); // latch가 0이 될때까지 최대 10초간 대기
-        executor.shutdown(); // 스레드 풀 종료 함수 : 사용한 스레드 풀 정리
-        assertThat(failures).isEmpty();
 
-        assertThat(testLockService.getMaxConcurrent()).isEqualTo(1);
+        try{
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> { // 스레드 제출 -> 각 스레드는 백그라운드에서 실행, 메인스레드는 스레드 제출만 하고 다음 줄로 넘어감 : executor.submit(()->{}) 5번 실행 후 latch.await()
+                    try {
+                        testLockService.executeWithLock("same-key"); // 5개의 스레드가 동시에 executeWithLock("same-key") 호출
+                    } catch (Exception e) {
+                        failures.add(e);
+                    } finally {
+                        latch.countDown(); // 각 스레드가 락 해제 후 카운터가 1 감소 : 0이 될때까지 메인 스레드가 각 스레드들을 대기
+                    }
+                });
+            }
+            boolean result = latch.await(10, TimeUnit.SECONDS);
+            assertThat(result).isTrue(); // latch가 0이 될때까지 최대 10초간 대기
+            assertThat(failures).isEmpty();
+            assertThat(testLockService.getMaxConcurrent()).isEqualTo(1);
+        }finally {
+            executor.shutdown(); // 스레드 풀 종료 함수 : 사용한 스레드 풀 정리
+        }
     }
     // 메인 스레드 종료
 }
