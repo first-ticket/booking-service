@@ -8,7 +8,7 @@ public record BookingPaymentRefundPayload(
     UUID userId,
     String reason
 ) {
-    public static BookingPaymentRefundPayload of(UUID paymentId, UUID userId, UUID bookingId, String reason){
-        return new BookingPaymentRefundPayload(paymentId,userId,bookingId,reason);
+    public static BookingPaymentRefundPayload of(UUID paymentId, UUID bookingId, UUID userId, String reason){
+        return new BookingPaymentRefundPayload(paymentId,bookingId,userId,reason);
     }
 }

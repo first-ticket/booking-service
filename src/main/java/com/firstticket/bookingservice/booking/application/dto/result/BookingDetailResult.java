@@ -1,14 +1,13 @@
 package com.firstticket.bookingservice.booking.application.dto.result;
 
 import com.firstticket.bookingservice.booking.domain.BookingStatus;
-import com.firstticket.bookingservice.booking.domain.vo.Money;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record BookingDetailResult(
     String programTitle,
     BookingStatus status,
-    Money totalPrice,
+    Long totalPrice,
     int totalCount,
     LocalDateTime eventStartAt,
     LocalDateTime eventEndAt,
@@ -20,7 +19,7 @@ public record BookingDetailResult(
     public static BookingDetailResult of(
         String programTitle,
         BookingStatus status,
-        Money totalPrice,
+        Long totalPrice,
         int totalCount,
         LocalDateTime eventStartAt,
         LocalDateTime eventEndAt,

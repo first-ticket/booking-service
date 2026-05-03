@@ -4,8 +4,10 @@ import com.firstticket.bookingservice.booking.application.BookingCommandService;
 import com.firstticket.bookingservice.booking.application.BookingQueryService;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingDetailResult;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingResult;
+import com.firstticket.bookingservice.booking.application.dto.result.BookingSummaryResult;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
+import com.firstticket.bookingservice.booking.domain.query.BookingPage;
 import com.firstticket.bookingservice.booking.presentation.dto.request.CreateBookingRequest;
 import com.firstticket.bookingservice.booking.presentation.dto.response.BookingResponse;
 import com.firstticket.bookingservice.booking.presentation.dto.response.BookingSummaryResponse;
@@ -23,7 +25,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,25 +67,38 @@ public class BookingController {
     //본인 예매 다건 조회
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<BookingSummaryResponse>>> getMyBookings(
-        Pageable pageable,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
         @RequestParam(required = false) String status,
         @RequestParam(required = false) LocalDate startDate,
         @RequestParam(required = false) LocalDate endDate
     ){
         UUID userId = AuthContext.getUserId();
-        Page<BookingSummaryResponse> response = bookingQueryService.searchMyBookings(
+        BookingPage<BookingSummaryResult> result = bookingQueryService.searchMyBookings(
             userId,
             status,
             startDate,
             endDate,
-            pageable
-        ).map(r -> BookingSummaryResponse.of(
-                r.bookingId(),
-                r.programTitle(),
-                r.status().name(),
-                r.totalPrice(),
-                r.totalCount()
-            ));
+            page,
+            size
+        );
+
+        Page<BookingSummaryResponse> response = new PageImpl<>(
+            result
+                .content()
+                .stream()
+                .map(r -> BookingSummaryResponse.of(
+                            r.bookingId(),
+                            r.programTitle(),
+                            r.status().name(),
+                            r.totalPrice(),
+                            r.totalCount()
+                        )
+                )
+                .toList()
+            , PageRequest.of(result.page(), result.size())
+            , result.totalElements()
+        );
 
         return ApiResponse.success(CommonSuccessCode.OK, response);
     }
@@ -101,7 +117,7 @@ public class BookingController {
             BookingResponse.of(
                 result.programTitle(),
                 result.status().toString(),
-                result.totalPrice().getAmount(),
+                result.totalPrice(),
                 result.totalCount(),
                 result.eventStartAt(),
                 result.eventEndAt(),

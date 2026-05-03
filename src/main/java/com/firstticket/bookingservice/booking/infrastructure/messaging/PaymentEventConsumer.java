@@ -22,23 +22,31 @@ public class PaymentEventConsumer {
     @KafkaListener(topics = "payment.completed")
     @IdempotentConsumer
     public void consumePaymentCompleted(ConsumerRecord<String, String> record, Acknowledgment ack){
-        PaymentCompletedPayload payload = JsonUtil.fromJson(record.value(), PaymentCompletedPayload.class);
-        log.info("[결제 성공] 메시지 수신. key={}, value={}", record.key(), payload.toString());
+        try{
+            PaymentCompletedPayload payload = JsonUtil.fromJson(record.value(), PaymentCompletedPayload.class);
+            log.info("[결제 성공] 메시지 수신. key={}, value={}", record.key(), payload.toString());
 
-        bookingCommandService.paymentCompleted(payload.bookingId(), payload.paymentId());
-
-        ack.acknowledge();
+            bookingCommandService.paymentCompleted(payload.bookingId(), payload.paymentId());
+        } catch (Exception e){
+            log.error("[결제 성공] 메시지 처리 실패. key={}, error={}", record.key(), e.getMessage(), e);
+        }finally {
+            ack.acknowledge();
+        }
     }
 
     @KafkaListener(topics = "payment.failed")
     @IdempotentConsumer
     public void consumePaymentFailed(ConsumerRecord<String, String> record, Acknowledgment ack){
-        PaymentFailedPayload payload = JsonUtil.fromJson(record.value(), PaymentFailedPayload.class);
-        log.info("[결제 실패] 메시지 수신. key={}, value={}", record.key(), payload.toString());
+        try{
+            PaymentFailedPayload payload = JsonUtil.fromJson(record.value(), PaymentFailedPayload.class);
+            log.info("[결제 실패] 메시지 수신. key={}, value={}", record.key(), payload.toString());
 
-        bookingCommandService.paymentFailed(payload.bookingId());
-
-        ack.acknowledge();
+            bookingCommandService.paymentFailed(payload.bookingId());
+        } catch (Exception e){
+            log.error("[결제 실패] 메시지 처리 실패. key={}, error={}", record.key(), e.getMessage(), e);
+        }finally {
+            ack.acknowledge();
+        }
     }
 
 }

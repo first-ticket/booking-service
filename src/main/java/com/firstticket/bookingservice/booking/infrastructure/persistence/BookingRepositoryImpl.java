@@ -2,9 +2,12 @@ package com.firstticket.bookingservice.booking.infrastructure.persistence;
 
 import com.firstticket.bookingservice.booking.domain.Booking;
 import com.firstticket.bookingservice.booking.domain.BookingRepository;
+import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -15,7 +18,11 @@ public class BookingRepositoryImpl implements BookingRepository {
 
     @Override
     public void save(Booking booking) {
-        bookingJpaRepository.save(booking);
+        try{
+            bookingJpaRepository.save(booking);
+        }catch (DataIntegrityViolationException e){
+            throw new BookingException(BookingErrorCode.DUPLICATE_BOOKING);
+        }
     }
 
     @Override

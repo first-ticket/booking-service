@@ -7,13 +7,13 @@ import com.firstticket.bookingservice.booking.domain.BookingRepository;
 import com.firstticket.bookingservice.booking.domain.BookingStatus;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
+import com.firstticket.bookingservice.booking.domain.query.BookingPage;
+import com.firstticket.bookingservice.booking.domain.query.BookingPageRequest;
 import com.firstticket.bookingservice.booking.domain.query.BookingQueryRepository;
 import com.firstticket.bookingservice.booking.domain.query.BookingSearchSpec;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +25,7 @@ public class BookingQueryService {
     private final BookingQueryRepository bookingQueryRepository;
 
     @Transactional(readOnly = true)
-    public Page<BookingSummaryResult> searchMyBookings(UUID userId, String status, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public BookingPage<BookingSummaryResult> searchMyBookings(UUID userId, String status, LocalDate startDate, LocalDate endDate, int page, int size) {
         BookingStatus bookingStatus = null;
         if (status != null) {
             try {
@@ -36,7 +36,8 @@ public class BookingQueryService {
         }
 
         BookingSearchSpec spec = new BookingSearchSpec(userId, bookingStatus, startDate, endDate);
-        return bookingQueryRepository.search(spec, pageable)
+        BookingPageRequest pageRequest = new BookingPageRequest(page, size);
+        return bookingQueryRepository.search(spec, pageRequest)
             .map(d -> BookingSummaryResult.of(
                 d.bookingId(),
                 d.programTitle(),
@@ -58,7 +59,7 @@ public class BookingQueryService {
         return BookingDetailResult.of(
             booking.getProgramTitle(),
             booking.getStatus(),
-            booking.getTotalPrice(),
+            booking.getTotalPrice().getAmount(),
             booking.getTotalCount(),
             booking.getEventStartAt(),
             booking.getEventEndAt(),

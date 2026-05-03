@@ -2,6 +2,10 @@ package com.firstticket.bookingservice.booking.infrastructure.persistence;
 
 import com.firstticket.bookingservice.booking.domain.Booking;
 import com.firstticket.bookingservice.booking.domain.QBooking;
+import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
+import com.firstticket.bookingservice.booking.domain.query.BookingPage;
+import com.firstticket.bookingservice.booking.domain.query.BookingPageRequest;
 import com.firstticket.bookingservice.booking.domain.query.BookingQueryRepository;
 import com.firstticket.bookingservice.booking.domain.query.BookingSearchSpec;
 import com.firstticket.bookingservice.booking.domain.query.BookingSummaryData;
@@ -9,8 +13,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -22,13 +25,15 @@ public class BookingQueryRepositoryImpl implements BookingQueryRepository {
     private final QBooking qBooking = QBooking.booking;
 
     @Override
-    public Page<BookingSummaryData> search(BookingSearchSpec spec, Pageable pageable) {
+    public BookingPage<BookingSummaryData> search(BookingSearchSpec spec, BookingPageRequest pageRequest) {
 
         BooleanBuilder builder = new BooleanBuilder();
+        Pageable pageable = PageRequest.of(pageRequest.page(), pageRequest.size());
 
-        if (spec.userId() != null) {
-            builder.and(qBooking.userId.eq(spec.userId()));
+        if (spec.userId() == null) {
+            throw new BookingException(BookingErrorCode.INVALID_USER_ID);
         }
+        builder.and(qBooking.userId.eq(spec.userId()));
         if (spec.status() != null) {
             builder.and(qBooking.status.eq(spec.status()));
         }
@@ -36,7 +41,7 @@ public class BookingQueryRepositoryImpl implements BookingQueryRepository {
             builder.and(qBooking.eventStartAt.goe(spec.startDate().atStartOfDay()));
         }
         if (spec.endDate() != null) {
-            builder.and(qBooking.eventStartAt.loe(spec.endDate().atTime(23, 59, 59)));
+            builder.and(qBooking.eventStartAt.lt(spec.endDate().plusDays(1).atStartOfDay()));
         }
 
         List<Booking> bookings = queryFactory
@@ -64,7 +69,7 @@ public class BookingQueryRepositoryImpl implements BookingQueryRepository {
             .where(builder)
             .fetchOne();
 
-        return new PageImpl<>(content, pageable, total == null ? 0 : total);
+        return new BookingPage<>(content, pageRequest.page(), pageRequest.size(), total == null ? 0 : total);
     }
 }
 

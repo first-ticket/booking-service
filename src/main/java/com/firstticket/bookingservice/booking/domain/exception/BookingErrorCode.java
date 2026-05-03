@@ -33,7 +33,6 @@ public enum BookingErrorCode implements ErrorCode {
     INVALID_EVENT_TIME(HttpStatus.BAD_REQUEST,"프로그램 시작 시간과 종료 시간이 올바르지 않습니다"),
     INVALID_VENUE_NAME(HttpStatus.BAD_REQUEST,"장소 이름은 필수입니다"),
     INVALID_VENUE_ADDRESS(HttpStatus.BAD_REQUEST,"장소 주소는 필수입니다"),
-    INVALID_SEAT_POSITOIN(HttpStatus.BAD_REQUEST,"좌석 정보는 필수입니다"),
 
     INVALID_SEAT_ID(HttpStatus.BAD_REQUEST, "해당 좌석을 선점한 상태가 아닙니다" ),
 
@@ -48,7 +47,10 @@ public enum BookingErrorCode implements ErrorCode {
 
     INVALID_BOOKING_ID(HttpStatus.NOT_FOUND, "해당하는 예매 데이터가 없습니다" ),
     INVALID_AUTHORIZATION(HttpStatus.UNAUTHORIZED, "조회 권한이 없습니다" ),
-    INVALID_BOOKING_STATUS(HttpStatus.BAD_REQUEST,"유효한 예매 Status가 아닙니다" );
+    INVALID_BOOKING_STATUS(HttpStatus.BAD_REQUEST,"유효한 예매 Status가 아닙니다" ),
+    PROGRAM_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "프로그램 서비스 에러"),
+    PAYMENT_SERVICE_CLIENT_ERROR(HttpStatus.BAD_REQUEST, "결제 서비스 클라이언트 오류"),
+    PAYMENT_SERVICE_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 서비스 서버 오류");
     private final HttpStatus status;
     private final String message;
 }

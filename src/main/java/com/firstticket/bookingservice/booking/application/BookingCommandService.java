@@ -5,6 +5,7 @@ import com.firstticket.bookingservice.booking.application.dto.result.BookingResu
 import com.firstticket.bookingservice.booking.application.lock.DistributedLock;
 import com.firstticket.bookingservice.booking.application.port.PaymentOperator;
 import com.firstticket.bookingservice.booking.application.port.ProgramOperator;
+import com.firstticket.bookingservice.booking.application.port.PublishEvent;
 import com.firstticket.bookingservice.booking.application.port.SeatOperator;
 import com.firstticket.bookingservice.booking.application.port.dto.HeldSeatResult;
 import com.firstticket.bookingservice.booking.application.port.dto.PaymentResult;
@@ -14,10 +15,7 @@ import com.firstticket.bookingservice.booking.domain.BookingItem;
 import com.firstticket.bookingservice.booking.domain.BookingRepository;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
-import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.BookingPaymentRefundPayload;
 import com.firstticket.common.exception.BusinessException;
-import com.firstticket.common.messaging.event.Events;
-import com.firstticket.common.web.AuthContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +32,7 @@ public class BookingCommandService {
     private final ProgramOperator programOperator;
     private final BookingRepository bookingRepository;
     private final PaymentOperator paymentOperator;
+    private final PublishEvent publishEvent;
 
     // 1. 예매 요청 동시성 제어
     @DistributedLock(
@@ -41,6 +40,7 @@ public class BookingCommandService {
         waitTime = 5, // 락을 기다릴 수 있는 시간
         timeUnit = TimeUnit.SECONDS
     )
+    @Transactional //락을 걸고 트랜잭션을 시작해야함 (순서 중요)
     public BookingResult create(UUID userId, CreateBookingCommand command, String sessionId) {
 
         // 순차적 중복 요청 방지 로직
@@ -120,19 +120,7 @@ public class BookingCommandService {
             booking.confirm();
         }catch (BusinessException e){
             booking.cancel();
-            Events.publish(
-                UUID.randomUUID().toString(),
-                "BOOKING",
-                booking.getId(),
-                "booking.payment.refund",
-                BookingPaymentRefundPayload.of(
-                    paymentId,
-                    AuthContext.getUserId(),
-                    bookingId,
-                    "좌석 선점 시간 만료"
-                )
-            );
-
+            publishEvent.paymentRefundEvent(paymentId, booking.getUserId(), bookingId);
         }
     }
     @Transactional
