@@ -51,19 +51,16 @@ class SeatInternalControllerTest extends RestDocsSupport {
         mockMvc.perform(RestDocumentationRequestBuilders
                 .get("/internal/v1/seats/remaining/{programId}", programId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.code").value("SEAT_REMAINING_OK"))
-            .andDo(document("seat-remaining-success",
+            .andExpect(jsonPath("$[0].scheduleId").exists())
+            .andExpect(jsonPath("$[0].remainingCount").value(42))
+            .andExpect(jsonPath("$[1].remainingCount").value(10))
+            .andDo(document("seat-internal-remaining-success",
                 pathParameters(
                     parameterWithName("programId").description("프로그램 ID")
                 ),
                 responseFields(
-                    fieldWithPath("success").description("성공 여부"),
-                    fieldWithPath("code").description("응답 코드"),
-                    fieldWithPath("message").description("응답 메시지"),
-                    fieldWithPath("timestamp").description("응답 시간"),
-                    fieldWithPath("data[].scheduleId").description("회차 ID"),
-                    fieldWithPath("data[].remainingCount").description("잔여 좌석 수")
+                    fieldWithPath("[].scheduleId").description("회차 ID"),
+                    fieldWithPath("[].remainingCount").description("잔여 좌석 수")
                 )
             ));
     }
