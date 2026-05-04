@@ -8,6 +8,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
@@ -24,20 +25,22 @@ public class BookingTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    private SecretKey getEntrySigningKey(String secret) {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
     // 예매 입장 토큰 검증 + claims 반환
     /* JWT의 페이로드에 다음과 같이 저장한다고 가정 -> Subject : 사용자 아이디, programId : 프로그램 아이디 // 추후 바뀔수도 있음
     * */
     public BookingTokenClaims validateEntryToken(String token){
 
         try{
-            SecretKey signingKey = getSigningKey(bookingTokenProperties.getEntrySecret());
-
+            SecretKey signingKey = getEntrySigningKey(bookingTokenProperties.getEntrySecret());
             Claims claims =  Jwts.parser()
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
             return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)), claims.getExpiration());
 
         }catch (ExpiredJwtException e){
@@ -46,8 +49,6 @@ public class BookingTokenProvider {
             // 그 외 모든 JWT 관련 에러 (변조, 형식 오류 등)
             throw new BookingException(BookingErrorCode.INVALID_ENTRY_TOKEN);
         }
-
-
     }
     // 세션 토큰 발급
     public String  generateSessionToken(UUID userId, UUID programId){
