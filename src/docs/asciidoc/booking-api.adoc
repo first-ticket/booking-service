@@ -1,0 +1,46 @@
+= 예매 API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+
+== 세션 토큰 발급
+
+=== 요청
+include::{snippets}/booking-create-session/path-parameters.adoc[]
+include::{snippets}/booking-create-session/request-headers.adoc[]
+
+=== 응답
+include::{snippets}/booking-create-session/response-fields.adoc[]
+include::{snippets}/booking-create-session/http-response.adoc[]
+
+== 예매 생성
+
+=== 요청
+include::{snippets}/booking-create/request-headers.adoc[]
+include::{snippets}/booking-create/request-fields.adoc[]
+
+=== 응답
+include::{snippets}/booking-create/response-fields.adoc[]
+include::{snippets}/booking-create/http-response.adoc[]
+
+== 예매 단건 조회
+
+=== 요청
+include::{snippets}/booking-get-detail/path-parameters.adoc[]
+include::{snippets}/booking-get-detail/request-headers.adoc[]
+
+=== 응답
+include::{snippets}/booking-get-detail/response-fields.adoc[]
+include::{snippets}/booking-get-detail/http-response.adoc[]
+
+== 예매 다건 조회
+
+=== 요청
+include::{snippets}/booking-get-list/request-headers.adoc[]
+include::{snippets}/booking-get-list/query-parameters.adoc[]
+
+=== 응답
+include::{snippets}/booking-get-list/response-fields.adoc[]
+include::{snippets}/booking-get-list/http-response.adoc[]
