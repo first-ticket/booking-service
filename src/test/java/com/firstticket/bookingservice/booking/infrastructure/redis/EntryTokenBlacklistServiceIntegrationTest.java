@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -25,6 +26,11 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest(classes = EntryTokenBlacklistService.class)
 @Import(EntryTokenBlacklistServiceIntegrationTest.TestConfig.class)
 @Testcontainers
+@TestPropertySource(properties = {
+    "spring.flyway.enabled=false",
+    "spring.cloud.config.enabled=false",
+    "eureka.client.enabled=false"
+})
 class EntryTokenBlacklistServiceIntegrationTest {
 
     @Container

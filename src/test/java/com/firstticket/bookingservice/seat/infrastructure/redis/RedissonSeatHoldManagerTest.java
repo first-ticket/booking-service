@@ -28,7 +28,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @Testcontainers
 @TestPropertySource(properties = {
-    "spring.kafka.consumer.group-id=test-group"
+    "spring.kafka.consumer.group-id=test-group",
+    "spring.flyway.enabled=false",
+    "spring.cloud.config.enabled=false",
+    "eureka.client.enabled=false"
 })
 class RedissonSeatHoldManagerTest {
 
