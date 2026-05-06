@@ -1,0 +1,46 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: ""
+
+  flyway:
+    enabled: false
+
+  kafka:
+    consumer:
+      auto-startup: false
+      group-id: test-group
+    listener:
+      missing-topics-fatal: false
+
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+
+  data:
+    redis:
+      timeout: 5s
+
+  main:
+    lazy-initialization: true
+
+eureka:
+  client:
+    enabled: false
+
+
+booking:
+  token:
+    entry-secret: test-entry-secret
+    session-secret: test-session-secret
+    session-token-validity: 3600
