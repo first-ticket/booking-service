@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      GITHUB_USER: ${{ secrets.GH_USER }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,14 +26,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew bootJar -x test
-        env:
-          GITHUB_USER: ${{ secrets.GH_USER }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Test
-        run: ./gradlew test
-        env:
-          GITHUB_USER: ${{ secrets.GH_USER }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      # 테스트 → 문서 생성 → 최종 빌드 (REST Docs 포함)
+      - name: Build (test → asciidoctor → bootJar)
+        run: ./gradlew test asciidoctor bootJar
