@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  booking-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_USER: ${GITHUB_USER}
+      secrets:
+        - github_token
+    container_name: first-ticket-booking
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_SERVER_URL: eureka-server
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - first-ticket-network
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN
+
+networks:
+  first-ticket-network:
+    external: true
