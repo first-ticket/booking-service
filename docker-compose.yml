@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  booking-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_USER: ${GITHUB_USER}
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    container_name: first-ticket-booking
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_SERVER_URL: eureka-server
+#      HOSTNAME: "booking-service"
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - first-ticket-network
+
+networks:
+  first-ticket-network:
+    external: true
