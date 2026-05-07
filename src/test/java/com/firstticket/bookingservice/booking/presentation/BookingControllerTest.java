@@ -88,6 +88,7 @@ class BookingControllerTest {
 
         BookingResult bookingResult = new BookingResult(
             UUID.randomUUID(),
+            UUID.randomUUID(),
             "order-001",
             "테스트 공연",
             LocalDateTime.now().plusDays(10),
@@ -120,6 +121,7 @@ class BookingControllerTest {
                     fieldWithPath("code").description("응답 코드"),
                     fieldWithPath("message").description("응답 메시지"),
                     fieldWithPath("timestamp").description("응답 시간"),
+                    fieldWithPath("data.bookingId").description("예매 ID"),
                     fieldWithPath("data.paymentId").description("결제 ID"),
                     fieldWithPath("data.orderId").description("주문 ID"),
                     fieldWithPath("data.programTitle").description("공연 제목"),

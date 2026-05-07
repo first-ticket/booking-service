@@ -1,0 +1,5 @@
+booking:
+  token:
+    entry-secret: ${BOOKING_ENTRY_SECRET}
+    session-secret: ${BOOKING_SESSION_SECRET}
+    session-token-validity: ${BOOKING_SESSION_TOKEN_VALIDITY:30m}

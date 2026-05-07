@@ -1,4 +1,4 @@
-package com.firstticket.bookingservice.booking.application.port.dto;
+package com.firstticket.bookingservice.booking.domain.service.vo;
 
 import java.time.LocalDateTime;
 

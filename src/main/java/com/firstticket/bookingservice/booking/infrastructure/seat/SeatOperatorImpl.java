@@ -1,7 +1,7 @@
 package com.firstticket.bookingservice.booking.infrastructure.seat;
 
-import com.firstticket.bookingservice.booking.application.port.SeatOperator;
-import com.firstticket.bookingservice.booking.application.port.dto.HeldSeatResult;
+import com.firstticket.bookingservice.booking.domain.service.SeatOperator;
+import com.firstticket.bookingservice.booking.domain.service.vo.HeldSeatResult;
 import com.firstticket.bookingservice.seat.infrastructure.internal.SeatConfirm;
 import java.util.List;
 import java.util.UUID;

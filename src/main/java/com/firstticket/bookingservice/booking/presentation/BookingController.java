@@ -3,12 +3,12 @@ package com.firstticket.bookingservice.booking.presentation;
 import com.firstticket.bookingservice.booking.application.BookingCommandService;
 import com.firstticket.bookingservice.booking.application.BookingQueryService;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingDetailResult;
-import com.firstticket.bookingservice.booking.application.dto.result.BookingResult;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingSummaryResult;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.query.BookingPage;
 import com.firstticket.bookingservice.booking.presentation.dto.request.CreateBookingRequest;
+import com.firstticket.bookingservice.booking.presentation.dto.response.BookingCreateResponse;
 import com.firstticket.bookingservice.booking.presentation.dto.response.BookingResponse;
 import com.firstticket.bookingservice.booking.presentation.dto.response.BookingSummaryResponse;
 import com.firstticket.bookingservice.booking.presentation.dto.response.SessionResponse;
@@ -49,7 +49,7 @@ public class BookingController {
 
     //예매 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<BookingResult>> create(
+    public ResponseEntity<ApiResponse<BookingCreateResponse>> create( //TODO: BookingResponse로 해야함
         @RequestBody @Valid CreateBookingRequest request,
         @BookingToken BookingTokenClaims claims,
         @RequestHeader("Booking-Session-Token") String headerSession
@@ -58,9 +58,9 @@ public class BookingController {
             throw new BookingException(BookingErrorCode.INVALID_PROGRAM_ID);
         }
         String token = headerSession.substring(7).trim();
-        BookingResult bookingResult = bookingCommandService.create(AuthContext.getUserId(), request.toCommand(), token);
+        BookingCreateResponse bookingCreateResponse = BookingCreateResponse.from(bookingCommandService.create(AuthContext.getUserId(), request.toCommand(), token));
 
-        return ApiResponse.success(CommonSuccessCode.CREATED, bookingResult);
+        return ApiResponse.success(CommonSuccessCode.CREATED, bookingCreateResponse);
     }
 
 

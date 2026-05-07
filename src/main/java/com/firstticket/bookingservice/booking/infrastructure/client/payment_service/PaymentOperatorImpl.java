@@ -1,7 +1,7 @@
 package com.firstticket.bookingservice.booking.infrastructure.client.payment_service;
 
-import com.firstticket.bookingservice.booking.application.port.PaymentOperator;
-import com.firstticket.bookingservice.booking.application.port.dto.PaymentResult;
+import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
+import com.firstticket.bookingservice.booking.domain.service.vo.PaymentResult;
 import com.firstticket.bookingservice.booking.infrastructure.client.payment_service.dto.PaymentRequest;
 import com.firstticket.bookingservice.booking.infrastructure.client.payment_service.dto.PaymentResponse;
 import java.util.UUID;

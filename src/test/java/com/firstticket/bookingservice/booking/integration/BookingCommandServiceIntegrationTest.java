@@ -8,12 +8,12 @@ import static org.mockito.BDDMockito.given;
 
 import com.firstticket.bookingservice.booking.application.BookingCommandService;
 import com.firstticket.bookingservice.booking.application.dto.command.CreateBookingCommand;
-import com.firstticket.bookingservice.booking.application.port.PaymentOperator;
-import com.firstticket.bookingservice.booking.application.port.ProgramOperator;
-import com.firstticket.bookingservice.booking.application.port.SeatOperator;
-import com.firstticket.bookingservice.booking.application.port.dto.HeldSeatResult;
-import com.firstticket.bookingservice.booking.application.port.dto.PaymentResult;
-import com.firstticket.bookingservice.booking.application.port.dto.ProgramScheduleResult;
+import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
+import com.firstticket.bookingservice.booking.domain.service.ProgramOperator;
+import com.firstticket.bookingservice.booking.domain.service.SeatOperator;
+import com.firstticket.bookingservice.booking.domain.service.vo.HeldSeatResult;
+import com.firstticket.bookingservice.booking.domain.service.vo.PaymentResult;
+import com.firstticket.bookingservice.booking.domain.service.vo.ProgramScheduleResult;
 import com.firstticket.bookingservice.booking.domain.Booking;
 import com.firstticket.bookingservice.booking.domain.BookingRepository;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -35,6 +36,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @Testcontainers
 class BookingCommandServiceIntegrationTest {

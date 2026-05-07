@@ -5,6 +5,6 @@ import java.util.UUID;
 public record PaymentRequest(
     UUID bookingId,
     UUID userId,
-    long price
+    long finalAmount
 ) {
 }
