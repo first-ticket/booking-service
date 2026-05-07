@@ -31,7 +31,6 @@ import org.springframework.data.domain.AuditorAware;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -40,15 +39,6 @@ import org.testcontainers.utility.DockerImageName;
 @ActiveProfiles("test")
 @SpringBootTest
 @Testcontainers
-@TestPropertySource(properties = {
-    "spring.kafka.consumer.auto-startup=false",     // Kafka 컨슈머 자동 시작 방지
-    "spring.kafka.consumer.group-id=test-group",
-    "spring.flyway.enabled=false",                  // Flyway 마이그레이션 비활성화
-    "spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
-})
 class BookingCommandServiceIntegrationTest {
 
     @Container
