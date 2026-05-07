@@ -8,11 +8,12 @@ COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
 
 ARG GITHUB_USER
-ARG GITHUB_TOKEN
 
 COPY src src
 
-RUN GITHUB_USER=$GITHUB_USER GITHUB_TOKEN=$GITHUB_TOKEN \
+RUN --mount=type=secret,id=github_token \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token)" \
+    GITHUB_USER=$GITHUB_USER \
     ./gradlew clean bootJar --no-daemon -x test -x asciidoctor
 
 FROM eclipse-temurin:21-jre-jammy

@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   booking-service:
     build:
@@ -7,14 +6,14 @@ services:
       dockerfile: Dockerfile
       args:
         GITHUB_USER: ${GITHUB_USER}
-        GITHUB_TOKEN: ${GITHUB_TOKEN}
+      secrets:
+        - github_token
     container_name: first-ticket-booking
     ports:
       - "8083:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
       EUREKA_SERVER_URL: eureka-server
-#      HOSTNAME: "booking-service"
     env_file:
       - .env
     healthcheck:
@@ -25,6 +24,10 @@ services:
       start_period: 60s
     networks:
       - first-ticket-network
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN
 
 networks:
   first-ticket-network:
