@@ -15,7 +15,7 @@ public enum BookingErrorCode implements ErrorCode {
 
     EXPIRED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 만료되었습니다"),
     INVALID_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 유효하지 않습니다"),
-    BLACKLISTED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 유효하지 않습니다"),
+    BLACKLISTED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "이미 사용 완료한 예매 입장 토큰입니다"),
 
     EXPIRED_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "예매 세션 토큰이 만료되었습니다"),
     INVALID_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "예매 세션 토큰이 유효하지 않습니다"),
@@ -50,7 +50,11 @@ public enum BookingErrorCode implements ErrorCode {
     INVALID_BOOKING_STATUS(HttpStatus.BAD_REQUEST,"유효한 예매 Status가 아닙니다" ),
     PROGRAM_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "프로그램 서비스 에러"),
     PAYMENT_SERVICE_CLIENT_ERROR(HttpStatus.BAD_REQUEST, "결제 서비스 클라이언트 오류"),
-    PAYMENT_SERVICE_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 서비스 서버 오류");
+    PAYMENT_SERVICE_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 서비스 서버 오류"),
+
+    TAMPERED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 변조되었습니다"),
+    MALFORMED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰 형식이 올바르지 않습니다");
+
     private final HttpStatus status;
     private final String message;
 }

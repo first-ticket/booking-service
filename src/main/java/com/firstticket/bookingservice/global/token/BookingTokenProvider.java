@@ -6,8 +6,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
@@ -43,11 +46,14 @@ public class BookingTokenProvider {
                 .getPayload();
             return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)), claims.getExpiration());
 
-        }catch (ExpiredJwtException e){
+        } catch (ExpiredJwtException e) {
             throw new BookingException(BookingErrorCode.EXPIRED_ENTRY_TOKEN);
-        }catch (JwtException | IllegalArgumentException e) {
-            // 그 외 모든 JWT 관련 에러 (변조, 형식 오류 등)
-            throw new BookingException(BookingErrorCode.INVALID_ENTRY_TOKEN);
+        } catch (SignatureException e) {
+            throw new BookingException(BookingErrorCode.TAMPERED_ENTRY_TOKEN); // 토큰 서명에 사용된 키와 검증에 사용된 키가 다를 때 발생
+        } catch (MalformedJwtException | UnsupportedJwtException e) {
+            throw new BookingException(BookingErrorCode.MALFORMED_ENTRY_TOKEN);
+        } catch (IllegalArgumentException e) {
+            throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
         }
     }
     // 세션 토큰 발급

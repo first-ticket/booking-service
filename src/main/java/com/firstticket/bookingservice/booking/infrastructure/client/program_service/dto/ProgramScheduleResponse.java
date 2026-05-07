@@ -1,6 +1,6 @@
 package com.firstticket.bookingservice.booking.infrastructure.client.program_service.dto;
 
-import com.firstticket.bookingservice.booking.application.port.dto.ProgramScheduleResult;
+import com.firstticket.bookingservice.booking.domain.service.dto.ProgramScheduleResult;
 import java.time.LocalDateTime;
 
 public record ProgramScheduleResponse(

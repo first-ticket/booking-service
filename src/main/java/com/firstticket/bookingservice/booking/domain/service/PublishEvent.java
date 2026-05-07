@@ -1,4 +1,4 @@
-package com.firstticket.bookingservice.booking.application.port;
+package com.firstticket.bookingservice.booking.domain.service;
 
 import java.util.UUID;
 

@@ -1,6 +1,6 @@
-package com.firstticket.bookingservice.booking.application.port;
+package com.firstticket.bookingservice.booking.domain.service;
 
-import com.firstticket.bookingservice.booking.application.port.dto.HeldSeatResult;
+import com.firstticket.bookingservice.booking.domain.service.dto.HeldSeatResult;
 import java.util.List;
 import java.util.UUID;
 

@@ -1,6 +1,6 @@
 package com.firstticket.bookingservice.booking.infrastructure.messaging;
 
-import com.firstticket.bookingservice.booking.application.port.PublishEvent;
+import com.firstticket.bookingservice.booking.domain.service.PublishEvent;
 import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.BookingPaymentRefundPayload;
 import com.firstticket.common.messaging.event.Events;
 import java.util.UUID;

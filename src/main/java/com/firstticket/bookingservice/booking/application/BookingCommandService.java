@@ -3,13 +3,13 @@ package com.firstticket.bookingservice.booking.application;
 import com.firstticket.bookingservice.booking.application.dto.command.CreateBookingCommand;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingResult;
 import com.firstticket.bookingservice.booking.application.lock.DistributedLock;
-import com.firstticket.bookingservice.booking.application.port.PaymentOperator;
-import com.firstticket.bookingservice.booking.application.port.ProgramOperator;
-import com.firstticket.bookingservice.booking.application.port.PublishEvent;
-import com.firstticket.bookingservice.booking.application.port.SeatOperator;
-import com.firstticket.bookingservice.booking.application.port.dto.HeldSeatResult;
-import com.firstticket.bookingservice.booking.application.port.dto.PaymentResult;
-import com.firstticket.bookingservice.booking.application.port.dto.ProgramScheduleResult;
+import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
+import com.firstticket.bookingservice.booking.domain.service.ProgramOperator;
+import com.firstticket.bookingservice.booking.domain.service.PublishEvent;
+import com.firstticket.bookingservice.booking.domain.service.SeatOperator;
+import com.firstticket.bookingservice.booking.domain.service.dto.HeldSeatResult;
+import com.firstticket.bookingservice.booking.domain.service.dto.PaymentResult;
+import com.firstticket.bookingservice.booking.domain.service.dto.ProgramScheduleResult;
 import com.firstticket.bookingservice.booking.domain.Booking;
 import com.firstticket.bookingservice.booking.domain.BookingItem;
 import com.firstticket.bookingservice.booking.domain.BookingRepository;
@@ -86,6 +86,7 @@ public class BookingCommandService {
 
         // 예매 정보 반환
         return new BookingResult(
+            booking.getId(),
             paymentResult.paymentId(),
             paymentResult.orderId(),
             booking.getProgramTitle(),

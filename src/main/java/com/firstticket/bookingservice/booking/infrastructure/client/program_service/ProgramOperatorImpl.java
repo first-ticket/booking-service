@@ -1,7 +1,7 @@
 package com.firstticket.bookingservice.booking.infrastructure.client.program_service;
 
-import com.firstticket.bookingservice.booking.application.port.ProgramOperator;
-import com.firstticket.bookingservice.booking.application.port.dto.ProgramScheduleResult;
+import com.firstticket.bookingservice.booking.domain.service.ProgramOperator;
+import com.firstticket.bookingservice.booking.domain.service.dto.ProgramScheduleResult;
 import com.firstticket.bookingservice.booking.infrastructure.client.program_service.dto.ProgramScheduleResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
