@@ -163,4 +163,13 @@ public class BookingController {
 
         return ApiResponse.success(CommonSuccessCode.OK, SessionResponse.of(sessionToken));
     }
+
+    //예매 취소
+    @PostMapping("/{bookingId}/cancel")
+    public ResponseEntity<ApiResponse<String>> cancelMyBooking(
+        @NotNull @PathVariable(name = "bookingId") UUID bookingId
+    ){
+        bookingCommandService.bookingCancel(bookingId);
+        return ApiResponse.success(CommonSuccessCode.OK, "예매 취소 성공");
+    }
 }

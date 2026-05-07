@@ -27,6 +27,7 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -51,6 +52,10 @@ public class Booking extends BaseUserEntity {
     @Column(name = "schedule_id", nullable = false)
     private UUID scheduleId;
 
+    @Setter
+    @Column(name = "payment_id")
+    private UUID paymentId;
+
     @Column(name = "program_title", nullable = false)
     private String programTitle;
 
@@ -65,6 +70,12 @@ public class Booking extends BaseUserEntity {
 
     @Column(name = "venue_address", nullable = false)
     private String venueAddress;
+
+    @Column(name = "sale_start_at", nullable = false)
+    private LocalDateTime saleStartAt;
+
+    @Column(name = "sale_end_at", nullable = false)
+    private LocalDateTime saleEndAt;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Getter(AccessLevel.NONE) // 외부에서 수정하지 못하도록 메서드를 통해 get 가능 + ( 불변 리스트로 반환할것 )
@@ -97,6 +108,13 @@ public class Booking extends BaseUserEntity {
         this.status =this.status.validateTransition(BookingStatus.CONFIRMED);
     }
 
+    public void cancelReq(){
+        if(!(LocalDateTime.now().isAfter(this.saleStartAt) && LocalDateTime.now().isBefore(this.saleEndAt))){
+            throw new BookingException(BookingErrorCode.BOOKING_CANCEL_NOT_ALLOWED);
+        }
+        this.status = this.status.validateTransition(BookingStatus.CANCEL_REQUESTED);
+    }
+
     public void cancel(){
         this.status =this.status.validateTransition(BookingStatus.CANCELED);
         this.expiredAt = LocalDateTime.now();
@@ -111,7 +129,9 @@ public class Booking extends BaseUserEntity {
         LocalDateTime eventStartAt,
         LocalDateTime eventEndAt,
         String venueName,
-        String venueAddress
+        String venueAddress,
+        LocalDateTime saleStartAt,
+        LocalDateTime saleEndAt
     ) {
         this.userId = Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         if(sessionId == null || sessionId.isBlank()){
@@ -142,11 +162,18 @@ public class Booking extends BaseUserEntity {
             throw new BookingException(BookingErrorCode.INVALID_VENUE_ADDRESS);
         }
 
+        // 시간 논리 검증 (시작 시간이 종료 시간보다 뒤일 수 없음)
+        if (saleStartAt == null || saleEndAt == null || saleStartAt.isAfter(saleEndAt)) {
+            throw new BookingException(BookingErrorCode.INVALID_EVENT_TIME);
+        }
+
         this.programTitle = programTitle;
         this.eventStartAt = eventStartAt;
         this.eventEndAt = eventEndAt;
         this.venueName = venueName;
         this.venueAddress = venueAddress;
+        this.saleStartAt = saleStartAt;
+        this.saleEndAt = saleEndAt;
     }
 
     public static Booking create(
@@ -158,7 +185,9 @@ public class Booking extends BaseUserEntity {
         LocalDateTime eventStartAt,
         LocalDateTime eventEndAt,
         String venueName,
-        String venueAddress
+        String venueAddress,
+        LocalDateTime saleStartAt,
+        LocalDateTime saleEndAt
     ){
         return new Booking(
             userId,
@@ -169,7 +198,9 @@ public class Booking extends BaseUserEntity {
             eventStartAt,
             eventEndAt,
             venueName,
-            venueAddress
+            venueAddress,
+            saleStartAt,
+            saleEndAt
         );
     }
 
@@ -194,5 +225,12 @@ public class Booking extends BaseUserEntity {
     // 외부에서 변경 못하도록 불변 리스트로 반환 (getter 로는 접근 불가)
     public List<BookingItem> getBookingItems(){
         return Collections.unmodifiableList(this.bookingItems);
+    }
+
+    public List<UUID> getSeatList(){
+        return this.bookingItems
+            .stream()
+            .map(BookingItem::getSeatId)
+            .toList();
     }
 }
