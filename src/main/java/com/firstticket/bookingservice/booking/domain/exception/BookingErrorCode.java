@@ -15,6 +15,7 @@ public enum BookingErrorCode implements ErrorCode {
 
     EXPIRED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 만료되었습니다"),
     INVALID_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 유효하지 않습니다"),
+    EMPTY_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 존재하지 않습니다"),
     BLACKLISTED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "이미 사용 완료한 예매 입장 토큰입니다"),
 
     EXPIRED_SESSION_TOKEN(HttpStatus.UNAUTHORIZED, "예매 세션 토큰이 만료되었습니다"),

@@ -1,4 +1,4 @@
-package com.firstticket.bookingservice.booking.domain.service.dto;
+package com.firstticket.bookingservice.booking.domain.service.vo;
 
 import java.util.UUID;
 

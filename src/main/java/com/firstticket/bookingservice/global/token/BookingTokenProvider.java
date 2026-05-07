@@ -47,13 +47,13 @@ public class BookingTokenProvider {
             return new BookingTokenClaims(UUID.fromString(claims.getSubject()), UUID.fromString(claims.get("programId", String.class)), claims.getExpiration());
 
         } catch (ExpiredJwtException e) {
-            throw new BookingException(BookingErrorCode.EXPIRED_ENTRY_TOKEN);
+            throw new BookingException(BookingErrorCode.EXPIRED_ENTRY_TOKEN); // 만료
         } catch (SignatureException e) {
-            throw new BookingException(BookingErrorCode.TAMPERED_ENTRY_TOKEN); // 토큰 서명에 사용된 키와 검증에 사용된 키가 다를 때 발생
+            throw new BookingException(BookingErrorCode.TAMPERED_ENTRY_TOKEN); // 변조,  토큰 서명에 사용된 키와 검증에 사용된 키가 다를 때 발생
         } catch (MalformedJwtException | UnsupportedJwtException e) {
-            throw new BookingException(BookingErrorCode.MALFORMED_ENTRY_TOKEN);
+            throw new BookingException(BookingErrorCode.MALFORMED_ENTRY_TOKEN); // 형식 오류
         } catch (IllegalArgumentException e) {
-            throw new BookingException(BookingErrorCode.EMPTY_SESSION_TOKEN);
+            throw new BookingException(BookingErrorCode.EMPTY_ENTRY_TOKEN); // 없음
         }
     }
     // 세션 토큰 발급
