@@ -59,7 +59,7 @@ public class SeatCommandService {
             }
         }
 
-        seatRepository.saveAll(seats);
+        seatRepository.bulkInsert(seats);
     }
 
     @Transactional
