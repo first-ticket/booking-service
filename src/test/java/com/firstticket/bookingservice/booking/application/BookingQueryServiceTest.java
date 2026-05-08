@@ -57,7 +57,9 @@ class BookingQueryServiceTest {
             LocalDateTime.now().plusDays(10),
             LocalDateTime.now().plusDays(10).plusHours(2),
             "올림픽공원",
-            "서울시 송파구"
+            "서울시 송파구",
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().plusDays(5)
         );
     }
 

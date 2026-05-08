@@ -16,6 +16,8 @@ import com.firstticket.bookingservice.booking.domain.BookingRepository;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.common.exception.BusinessException;
+import com.firstticket.common.web.AuthContext;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -69,7 +71,9 @@ public class BookingCommandService {
             programScheduleResult.eventStartAt(),
             programScheduleResult.eventEndAt(),
             programScheduleResult.venueName(),
-            programScheduleResult.venueAddress()
+            programScheduleResult.venueAddress(),
+            programScheduleResult.saleStartAt(),
+            programScheduleResult.saleEndAt()
         );
         for(HeldSeatResult s : heldSeatResults){
             booking.addItem(
@@ -105,7 +109,9 @@ public class BookingCommandService {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new BookingException(BookingErrorCode.INVALID_BOOKING_ID));
 
         booking.paid();
+        booking.setPaymentId(paymentId); //paymentId 비로소 저장 : 이전까지는 null
 
+        // 결제 완료 후 아직 좌석 선점 유효한지 검증
         List<UUID> seatIds = booking.getBookingItems()
             .stream()
             .map(BookingItem::getSeatId)
@@ -120,14 +126,38 @@ public class BookingCommandService {
             );
             booking.confirm();
         }catch (BusinessException e){
-            booking.cancel();
+            booking.cancelReq();
             publishEvent.paymentRefundEvent(paymentId, booking.getUserId(), bookingId);
         }
     }
 
-    @Transactional
+    @Transactional // 결제 실패
     public void paymentFailed(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new BookingException(BookingErrorCode.INVALID_BOOKING_ID));
+        booking.cancel();
+    }
+
+    @Transactional // 예매 취소
+    public void bookingCancel(@NotNull UUID bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new BookingException(BookingErrorCode.INVALID_BOOKING_ID));
+        if(!booking.getUserId().equals(AuthContext.getUserId())){
+            throw new BookingException(BookingErrorCode.INVALID_AUTHORIZATION);
+        }
+        //일단 '예매 취소 요청 상태' : 결제로부터 '취소 확정' 또는 '환불 확정' 메세지 받으면 '예매 취소 확정 상태'로 변경
+        booking.cancelReq();
+
+        //예매 취소 이벤트 발행
+        publishEvent.cancelBooking(booking.getPaymentId(), booking.getUserId(), booking.getId());
+    }
+
+    @Transactional // 환불 확정
+    public void refundComplete(@NotNull UUID bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new BookingException(BookingErrorCode.INVALID_BOOKING_ID));
+        List<UUID> seatList = booking.getSeatList();
+        publishEvent.cancelBookingConfirmed(seatList, bookingId);
+
         booking.cancel();
     }
 }

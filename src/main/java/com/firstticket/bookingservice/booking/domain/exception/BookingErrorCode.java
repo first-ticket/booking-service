@@ -54,7 +54,8 @@ public enum BookingErrorCode implements ErrorCode {
     PAYMENT_SERVICE_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "결제 서비스 서버 오류"),
 
     TAMPERED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰이 변조되었습니다"),
-    MALFORMED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰 형식이 올바르지 않습니다");
+    MALFORMED_ENTRY_TOKEN(HttpStatus.UNAUTHORIZED, "예매 입장 토큰 형식이 올바르지 않습니다"),
+    BOOKING_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "예매 취소 가능 기간이 아닙니다");
 
     private final HttpStatus status;
     private final String message;

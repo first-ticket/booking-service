@@ -10,6 +10,11 @@ import static org.mockito.BDDMockito.willThrow;
 
 import com.firstticket.bookingservice.booking.application.dto.command.CreateBookingCommand;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingResult;
+import com.firstticket.bookingservice.booking.domain.Booking;
+import com.firstticket.bookingservice.booking.domain.BookingRepository;
+import com.firstticket.bookingservice.booking.domain.BookingStatus;
+import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
 import com.firstticket.bookingservice.booking.domain.service.ProgramOperator;
 import com.firstticket.bookingservice.booking.domain.service.PublishEvent;
@@ -17,11 +22,6 @@ import com.firstticket.bookingservice.booking.domain.service.SeatOperator;
 import com.firstticket.bookingservice.booking.domain.service.vo.HeldSeatResult;
 import com.firstticket.bookingservice.booking.domain.service.vo.PaymentResult;
 import com.firstticket.bookingservice.booking.domain.service.vo.ProgramScheduleResult;
-import com.firstticket.bookingservice.booking.domain.Booking;
-import com.firstticket.bookingservice.booking.domain.BookingRepository;
-import com.firstticket.bookingservice.booking.domain.BookingStatus;
-import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
-import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.common.messaging.event.Events;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -132,7 +132,9 @@ class BookingCommandServiceTest {
             "테스트 공연",
             LocalDateTime.now().plusDays(10),
             LocalDateTime.now().plusDays(10).plusHours(2),
-            "올림픽공원", "서울시 송파구");
+            "올림픽공원", "서울시 송파구",
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().plusDays(5));
 
         UUID bookingId = UUID.randomUUID();
         UUID paymentId = UUID.randomUUID();
@@ -145,12 +147,14 @@ class BookingCommandServiceTest {
     }
 
     @Test
-    void paymentCompleted_좌석선점_실패시_CANCELED로_전이된다() {
+    void paymentCompleted_좌석선점_실패시_CANCEL_REQUEST로_전이된다() {
         Booking booking = Booking.create(userId, sessionId, programId, scheduleId,
             "테스트 공연",
             LocalDateTime.now().plusDays(10),
             LocalDateTime.now().plusDays(10).plusHours(2),
-            "올림픽공원", "서울시 송파구");
+            "올림픽공원", "서울시 송파구",
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().plusDays(5));
 
         UUID bookingId = UUID.randomUUID();
         UUID paymentId = UUID.randomUUID();
@@ -160,7 +164,7 @@ class BookingCommandServiceTest {
             .given(seatOperator).reserveSeat(any(), any(), any(), any());
         bookingCommandService.paymentCompleted(bookingId, paymentId);
 
-        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELED);
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCEL_REQUESTED);
         then(publishEvent).should().paymentRefundEvent(paymentId, userId, bookingId);
     }
 
@@ -170,7 +174,9 @@ class BookingCommandServiceTest {
             "테스트 공연",
             LocalDateTime.now().plusDays(10),
             LocalDateTime.now().plusDays(10).plusHours(2),
-            "올림픽공원", "서울시 송파구");
+            "올림픽공원", "서울시 송파구",
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().plusDays(5));
 
         UUID bookingId = UUID.randomUUID();
 
