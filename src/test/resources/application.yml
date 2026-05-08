@@ -44,3 +44,8 @@ booking:
     entry-secret: test-entry-secret
     session-secret: test-session-secret
     session-token-validity: 3600
+
+common:
+  messaging:
+    scheduler:
+      enabled: false
