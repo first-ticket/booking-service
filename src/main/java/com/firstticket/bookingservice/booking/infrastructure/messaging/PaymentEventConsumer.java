@@ -3,7 +3,7 @@ package com.firstticket.bookingservice.booking.infrastructure.messaging;
 import com.firstticket.bookingservice.booking.application.BookingCommandService;
 import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.PaymentCompletedPayload;
 import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.PaymentFailedPayload;
-import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.RefundCompletedPayload;
+import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.paymentRefundCompletedPayload;
 import com.firstticket.common.json.JsonUtil;
 import com.firstticket.common.messaging.annotation.IdempotentConsumer;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +54,7 @@ public class PaymentEventConsumer {
     @IdempotentConsumer
     public void consumeRefundCompleted(ConsumerRecord<String, String> record, Acknowledgment ack){
         try{
-            RefundCompletedPayload payload = JsonUtil.fromJson(record.value(), RefundCompletedPayload.class);
+            paymentRefundCompletedPayload payload = JsonUtil.fromJson(record.value(), paymentRefundCompletedPayload.class);
             bookingCommandService.refundComplete(payload.bookingId());
             log.info("[환불 확정] 메시지 수신. key={}, value={}", record.key(), payload.toString());
 

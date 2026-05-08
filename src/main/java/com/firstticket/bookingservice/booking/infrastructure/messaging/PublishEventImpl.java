@@ -1,9 +1,9 @@
 package com.firstticket.bookingservice.booking.infrastructure.messaging;
 
 import com.firstticket.bookingservice.booking.domain.service.PublishEvent;
-import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.BookingPaymentRefundPayload;
-import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.CancelSeatListPayload;
-import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.PaymentCancelRequestPayload;
+import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.BookingExpiredPayload;
+import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.BookingCancelConfirmedPayload;
+import com.firstticket.bookingservice.booking.infrastructure.messaging.payload.PaymentCancelRequestedPayload;
 import com.firstticket.common.messaging.event.Events;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +18,7 @@ public class PublishEventImpl implements PublishEvent {
             "BOOKING",
             bookingId,
             "booking.expired",
-            BookingPaymentRefundPayload.of(
+            BookingExpiredPayload.of(
                 paymentId,
                 userId,
                 bookingId,
@@ -35,7 +35,7 @@ public class PublishEventImpl implements PublishEvent {
             "BOOKING",
             bookingId,
             "booking.cancel.requested",
-            PaymentCancelRequestPayload.of(
+            PaymentCancelRequestedPayload.of(
                 paymentId,
                 userId,
                 bookingId,
@@ -52,7 +52,7 @@ public class PublishEventImpl implements PublishEvent {
             "BOOKING",
             bookingId,
             "booking.cancel.confirmed",
-            CancelSeatListPayload.of(
+            BookingCancelConfirmedPayload.of(
                 seatList
             )
         );
