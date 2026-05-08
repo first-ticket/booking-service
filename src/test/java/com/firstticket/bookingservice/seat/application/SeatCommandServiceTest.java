@@ -50,7 +50,7 @@ class SeatCommandServiceTest {
         seatCommandService.createSeats(command);
 
         ArgumentCaptor<List<Seat>> captor = ArgumentCaptor.forClass(List.class);
-        verify(seatRepository).saveAll(captor.capture());
+        verify(seatRepository).bulkInsert(captor.capture());
         assertThat(captor.getValue()).hasSize(25); // SEATED 3*5 + STANDING 10
     }
 }

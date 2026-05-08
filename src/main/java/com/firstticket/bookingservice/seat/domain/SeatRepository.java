@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public interface SeatRepository {
 
+    void bulkInsert(List<Seat> seats);
+
     Optional<Seat> findByIdAndScheduleId(SeatId id, UUID scheduleId);
 
     List<Seat> findByScheduleId(UUID scheduleId);
