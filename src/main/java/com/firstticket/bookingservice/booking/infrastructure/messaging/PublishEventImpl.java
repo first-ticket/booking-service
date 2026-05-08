@@ -17,7 +17,7 @@ public class PublishEventImpl implements PublishEvent {
             UUID.randomUUID().toString(),
             "BOOKING",
             bookingId,
-            "booking.refund.request",
+            "booking.expired",
             BookingPaymentRefundPayload.of(
                 paymentId,
                 userId,
@@ -34,7 +34,7 @@ public class PublishEventImpl implements PublishEvent {
             UUID.randomUUID().toString(),
             "BOOKING",
             bookingId,
-            "booking.cancel.request",
+            "booking.cancel.requested",
             PaymentCancelRequestPayload.of(
                 paymentId,
                 userId,
