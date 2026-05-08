@@ -1,8 +1,10 @@
 package com.firstticket.bookingservice.seat.infrastructure.persistence;
 
 import com.firstticket.bookingservice.seat.domain.Seat;
+import com.firstticket.bookingservice.seat.domain.SeatRepository;
 import com.firstticket.bookingservice.seat.domain.SeatedInfo;
 import com.firstticket.bookingservice.seat.domain.Section;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +21,7 @@ import java.util.UUID;
 
 @SpringBootTest
 @Testcontainers
+@Disabled("성능 벤치마크 테스트 - 로컬에서 수동 실행 전용")
 class SeatBulkInsertBenchmarkTest {
 
     @Container
@@ -26,7 +29,7 @@ class SeatBulkInsertBenchmarkTest {
         .withDatabaseName("testdb")
         .withUsername("test")
         .withPassword("test")
-        .withInitScript("schema.sql");
+        .withInitScript("sql/schema.sql");
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -42,7 +45,7 @@ class SeatBulkInsertBenchmarkTest {
     }
 
     @Autowired
-    private SeatRepositoryImpl seatRepository;
+    private SeatRepository seatRepository;
 
     @Autowired
     private SeatJpaRepository jpaRepository;

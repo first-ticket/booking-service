@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -31,6 +32,7 @@ public class SeatRepositoryImpl implements SeatRepository {
 
     private static final int BATCH_SIZE = 500;
 
+    @Transactional
     @Override
     public void bulkInsert(List<Seat> seats) {
         String seatedSql = """
