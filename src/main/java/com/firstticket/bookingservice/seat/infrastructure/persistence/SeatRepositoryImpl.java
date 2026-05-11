@@ -150,4 +150,9 @@ public class SeatRepositoryImpl implements SeatRepository {
         return jpaRepository.countAvailableByProgramId(programId);
     }
 
+    @Override
+    public List<Seat> findAllByIdIn(List<SeatId> seatIds) {
+        return jpaRepository.findAllByIdIn(seatIds);
+    }
+
 }
