@@ -27,4 +27,6 @@ public interface SeatJpaRepository extends JpaRepository<Seat, SeatId> {
             "GROUP BY s.scheduleId"
     )
     List<SeatRemainingCount> countAvailableByProgramId(@Param("programId") UUID programId);
+
+    List<Seat> findAllByIdIn(List<SeatId> seatIds);
 }

@@ -22,4 +22,6 @@ public interface SeatRepository {
     Set<SeatId> findHeldSeatIds(List<SeatId> seatIds);
 
     List<SeatRemainingCount> countAvailableByProgramId(UUID programId);
+
+    List<Seat> findAllByIdIn(List<SeatId> ids);
 }

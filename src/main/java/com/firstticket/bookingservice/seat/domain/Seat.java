@@ -149,4 +149,12 @@ public class Seat extends BaseEntity {
             case STANDING -> standingInfo.display(section.sectionName());
         };
     }
+
+    // 좌석 복구 RESERVED -> AVAILABLE
+    public void restore() {
+        if (this.status == SeatStatus.AVAILABLE) {
+            return; // 이미 복구된 상태면 무시
+        }
+        this.status = SeatStatus.AVAILABLE;
+    }
 }
