@@ -46,14 +46,15 @@ public class PublishEventImpl implements PublishEvent {
 
     //booking.cancel.confirmed
     @Override
-    public void cancelBookingConfirmed(List<UUID> seatList, UUID bookingId) {
+    public void cancelBookingConfirmed(List<UUID> seatList, UUID bookingId, UUID scheduleId) {
         Events.publish(
             UUID.randomUUID().toString(),
             "BOOKING",
             bookingId,
             "booking.cancel.confirmed",
             BookingCancelConfirmedPayload.of(
-                seatList
+                seatList,
+                scheduleId
             )
         );
     }
