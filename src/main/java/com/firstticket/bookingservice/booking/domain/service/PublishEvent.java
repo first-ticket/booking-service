@@ -6,5 +6,5 @@ import java.util.UUID;
 public interface PublishEvent {
     void paymentRefundEvent(UUID paymentId, UUID userId, UUID BookingId);
     void cancelBooking(UUID paymentId, UUID userId, UUID bookingId);
-    void cancelBookingConfirmed(List<UUID> seatList, UUID bookingId);
+    void cancelBookingConfirmed(List<UUID> seatList, UUID bookingId, UUID scheduleId);
 }

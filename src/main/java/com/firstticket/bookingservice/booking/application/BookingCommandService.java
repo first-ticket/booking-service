@@ -156,7 +156,7 @@ public class BookingCommandService {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new BookingException(BookingErrorCode.INVALID_BOOKING_ID));
         List<UUID> seatList = booking.getSeatList();
-        publishEvent.cancelBookingConfirmed(seatList, bookingId);
+        publishEvent.cancelBookingConfirmed(seatList, bookingId, booking.getScheduleId());
 
         booking.cancel();
     }
