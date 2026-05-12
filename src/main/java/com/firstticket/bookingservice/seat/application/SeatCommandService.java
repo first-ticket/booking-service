@@ -82,16 +82,14 @@ public class SeatCommandService {
     @Transactional
     public void reserveSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         seatManager.reserveSeats(getSeats(seatIds, scheduleId), scheduleId, userId, sessionId);
+        seatRepository.refreshSeatCache(scheduleId);
     }
 
     @Transactional
-    public void restoreSeats(List<UUID> seatIds) {
-        List<SeatId> ids = toSeatIds(seatIds);
-        List<Seat> seats = seatRepository.findAllByIdIn(ids);
-        if (seats.size() != ids.size()) {
-            throw new SeatException(SeatErrorCode.SEAT_NOT_FOUND);
-        }
+    public void restoreSeats(List<UUID> seatIds, UUID scheduleId) {
+        List<Seat> seats = getSeats(seatIds, scheduleId);
         seats.forEach(Seat::restore);
+        seatRepository.refreshSeatCache(scheduleId);
     }
 
     private List<Seat> getSeats(List<UUID> seatIds, UUID scheduleId) {

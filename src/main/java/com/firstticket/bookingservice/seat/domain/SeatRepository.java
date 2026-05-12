@@ -1,6 +1,7 @@
 package com.firstticket.bookingservice.seat.domain;
 
 import com.firstticket.bookingservice.seat.domain.query.SeatRemainingCount;
+import org.springframework.cache.annotation.CachePut;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,8 @@ public interface SeatRepository {
     Optional<Seat> findByIdAndScheduleId(SeatId id, UUID scheduleId);
 
     List<Seat> findByScheduleId(UUID scheduleId);
+
+    List<Seat> refreshSeatCache(UUID scheduleId);
 
     List<Seat> findAllByIdInAndScheduleId(List<SeatId> ids, UUID scheduleId);
 

@@ -36,7 +36,7 @@ public class SeatKafkaConsumer {
         BookingCancelConfirmedPayload payload = JsonUtil.fromJson(record.value(), BookingCancelConfirmedPayload.class);
         log.info("[SeatKafkaConsumer] 메시지 수신. key={}, value={}", record.key(), payload.toString());
 
-        seatCommandService.restoreSeats(payload.seatList());
+        seatCommandService.restoreSeats(payload.seatList(), payload.scheduleId());
 
         ack.acknowledge();
     }

@@ -7,6 +7,8 @@ import com.firstticket.bookingservice.seat.domain.SeatType;
 import com.firstticket.bookingservice.seat.domain.query.SeatRemainingCount;
 import com.firstticket.bookingservice.seat.infrastructure.redis.SeatRedisRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -125,8 +127,15 @@ public class SeatRepositoryImpl implements SeatRepository {
         return jpaRepository.findByIdAndScheduleId(id, scheduleId);
     }
 
+    @Cacheable(value = "seats", key = "#scheduleId")
     @Override
     public List<Seat> findByScheduleId(UUID scheduleId) {
+        return jpaRepository.findAllByScheduleId(scheduleId);
+    }
+
+    @CachePut(value = "seats", key = "#scheduleId")
+    @Override
+    public List<Seat> refreshSeatCache(UUID scheduleId) {
         return jpaRepository.findAllByScheduleId(scheduleId);
     }
 
