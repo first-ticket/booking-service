@@ -3,6 +3,7 @@ package com.firstticket.bookingservice.seat.infrastructure.redis;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +28,10 @@ public class CacheConfig {
         cacheObjectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         cacheObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         cacheObjectMapper.activateDefaultTyping(
-            cacheObjectMapper.getPolymorphicTypeValidator(),
+            BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("com.firstticket.bookingservice")
+                .allowIfSubType("java.util")
+                .build(),
             ObjectMapper.DefaultTyping.NON_FINAL
         );
 
