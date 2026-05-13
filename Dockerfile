@@ -16,9 +16,19 @@ RUN --mount=type=secret,id=github_token \
     GITHUB_USER=$GITHUB_USER \
     ./gradlew clean bootJar --no-daemon -x test -x asciidoctor
 
+RUN java -Djarmode=layertools -jar build/libs/*.jar extract
+
 FROM eclipse-temurin:21-jre-jammy
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN useradd -ms /bin/bash spring
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+
+COPY --from=builder --chown=spring:spring /app/dependencies/ ./
+COPY --from=builder --chown=spring:spring /app/spring-boot-loader/ ./
+COPY --from=builder --chown=spring:spring /app/snapshot-dependencies/ ./
+COPY --from=builder --chown=spring:spring /app/application/ ./
+
+USER spring
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENV JAVA_OPTS=""
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

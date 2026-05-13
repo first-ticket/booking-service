@@ -15,6 +15,12 @@ spring:
         enabled: true
         service-id: config-server
 
+    inetutils:
+      preferred-networks:
+        - 10\.
+        - 172\.
+        - 192\.168\.
+
   profiles:
     include: kafka
 
