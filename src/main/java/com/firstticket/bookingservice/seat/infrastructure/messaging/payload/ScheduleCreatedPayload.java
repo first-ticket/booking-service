@@ -6,7 +6,7 @@ import com.firstticket.bookingservice.seat.domain.SeatType;
 import java.util.List;
 import java.util.UUID;
 
-public record ProgramCreatedPayload(
+public record ScheduleCreatedPayload(
     UUID programId,
     UUID scheduleId,
     List<SeatTemplatePayload> seatTemplates
