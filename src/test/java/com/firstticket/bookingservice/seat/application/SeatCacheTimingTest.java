@@ -5,6 +5,7 @@ import com.firstticket.bookingservice.seat.domain.SeatRepository;
 import com.firstticket.bookingservice.seat.domain.SeatStatus;
 import com.firstticket.bookingservice.seat.domain.SeatedInfo;
 import com.firstticket.bookingservice.seat.domain.Section;
+import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import com.firstticket.bookingservice.seat.infrastructure.persistence.SeatJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -24,11 +25,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers
 @Disabled("좌석 조회 캐시 타이밍 테스트 - 로컬 캐시 검증용")
-class SeatCacheTimingTest {
+class SeatCacheTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
@@ -95,26 +97,25 @@ class SeatCacheTimingTest {
     }
 
     @Test
-    @DisplayName("reserveSeats 호출 후 캐시 상태가 RESERVED로 반환된다")
-    void 캐시_타이밍_검증() {
-        // given - 선점 상태 세팅 (Redis held 키)
-        seatCommandService.holdSeats(List.of(seatId), programId, scheduleId, userId, sessionId);
+    @DisplayName("트랜잭션 롤백 시 캐시가 갱신되지 않는다")
+    void 롤백_시_캐시_정합성_검증() {
+        // given - 캐시 초기 적재
+        seatRepository.findByScheduleId(scheduleId);
 
-        // when
-        seatCommandService.reserveSeats(List.of(seatId), scheduleId, userId, sessionId);
+        // when - 존재하지 않는 seatId로 reserveSeats 호출 → 예외 발생 → 롤백
+        assertThrows(SeatException.class, () ->
+            seatCommandService.reserveSeats(
+                List.of(UUID.randomUUID()), // 존재하지 않는 seatId
+                scheduleId,
+                userId,
+                sessionId
+            )
+        );
 
-        // then
-        List<Seat> cached = cacheManager.getCache("seats")
-            .get(scheduleId, List.class);
-
-        SeatStatus cachedStatus = cached.stream()
-            .filter(s -> s.getId().id().equals(seatId))
-            .findFirst()
-            .map(Seat::getStatus)
-            .orElseThrow();
-
-        // RESERVED면 정상, AVAILABLE이면 커밋 전 상태가 캐시에 들어간 것
-        assertThat(cachedStatus).isEqualTo(SeatStatus.RESERVED);
+        // then - 캐시는 갱신되지 않아야 함 (AFTER_COMMIT이므로)
+        List<Seat> cached = seatRepository.findByScheduleId(scheduleId);
+        assertThat(cached)
+            .allMatch(seat -> seat.getStatus() == SeatStatus.AVAILABLE);
     }
 
     @Test

@@ -9,10 +9,12 @@ import com.firstticket.bookingservice.seat.domain.SeatType;
 import com.firstticket.bookingservice.seat.domain.SeatedInfo;
 import com.firstticket.bookingservice.seat.domain.Section;
 import com.firstticket.bookingservice.seat.domain.StandingInfo;
+import com.firstticket.bookingservice.seat.domain.event.SeatCacheRefreshEvent;
 import com.firstticket.bookingservice.seat.domain.exception.SeatErrorCode;
 import com.firstticket.bookingservice.seat.domain.exception.SeatException;
 import com.firstticket.bookingservice.seat.domain.service.SeatManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class SeatCommandService {
 
     private final SeatRepository seatRepository;
     private final SeatManager seatManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void createSeats(CreateSeatsCommand command) {
@@ -82,14 +85,14 @@ public class SeatCommandService {
     @Transactional
     public void reserveSeats(List<UUID> seatIds, UUID scheduleId, UUID userId, String sessionId) {
         seatManager.reserveSeats(getSeats(seatIds, scheduleId), scheduleId, userId, sessionId);
-        seatRepository.refreshSeatCache(scheduleId);
+        eventPublisher.publishEvent(new SeatCacheRefreshEvent(scheduleId));
     }
 
     @Transactional
     public void restoreSeats(List<UUID> seatIds, UUID scheduleId) {
         List<Seat> seats = getSeats(seatIds, scheduleId);
         seats.forEach(Seat::restore);
-        seatRepository.refreshSeatCache(scheduleId);
+        eventPublisher.publishEvent(new SeatCacheRefreshEvent(scheduleId));
     }
 
     private List<Seat> getSeats(List<UUID> seatIds, UUID scheduleId) {

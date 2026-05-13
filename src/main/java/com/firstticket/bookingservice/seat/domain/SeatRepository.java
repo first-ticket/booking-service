@@ -10,10 +10,7 @@ public interface SeatRepository {
 
     void bulkInsert(List<Seat> seats);
 
-
     List<Seat> findByScheduleId(UUID scheduleId);
-
-    List<Seat> refreshSeatCache(UUID scheduleId);
 
     List<Seat> findAllByIdInAndScheduleId(List<SeatId> ids, UUID scheduleId);
 

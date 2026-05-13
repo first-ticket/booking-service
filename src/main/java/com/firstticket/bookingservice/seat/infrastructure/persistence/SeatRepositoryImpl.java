@@ -128,12 +128,6 @@ public class SeatRepositoryImpl implements SeatRepository {
         return jpaRepository.findAllByScheduleId(scheduleId);
     }
 
-    @CachePut(value = "seats", key = "#scheduleId")
-    @Override
-    public List<Seat> refreshSeatCache(UUID scheduleId) {
-        return jpaRepository.findAllByScheduleId(scheduleId);
-    }
-
     @Override
     public List<Seat> findAllByIdInAndScheduleId(List<SeatId> ids, UUID scheduleId) {
         return jpaRepository.findAllByIdInAndScheduleId(ids, scheduleId);
