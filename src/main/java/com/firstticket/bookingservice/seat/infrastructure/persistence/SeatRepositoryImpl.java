@@ -122,11 +122,6 @@ public class SeatRepositoryImpl implements SeatRepository {
         return partitions;
     }
 
-    @Override
-    public Optional<Seat> findByIdAndScheduleId(SeatId id, UUID scheduleId) {
-        return jpaRepository.findByIdAndScheduleId(id, scheduleId);
-    }
-
     @Cacheable(value = "seats", key = "#scheduleId")
     @Override
     public List<Seat> findByScheduleId(UUID scheduleId) {
@@ -145,11 +140,6 @@ public class SeatRepositoryImpl implements SeatRepository {
     }
 
     @Override
-    public List<Seat> saveAll(List<Seat> seats) {
-        return jpaRepository.saveAll(seats);
-    }
-
-    @Override
     public Set<SeatId> findHeldSeatIds(List<SeatId> seatIds) {
         return redisRepository.findHeldSeatIds(seatIds);
     }
@@ -157,11 +147,6 @@ public class SeatRepositoryImpl implements SeatRepository {
     @Override
     public List<SeatRemainingCount> countAvailableByProgramId(UUID programId) {
         return jpaRepository.countAvailableByProgramId(programId);
-    }
-
-    @Override
-    public List<Seat> findAllByIdIn(List<SeatId> seatIds) {
-        return jpaRepository.findAllByIdIn(seatIds);
     }
 
 }
