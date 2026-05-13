@@ -2,7 +2,7 @@ package com.firstticket.bookingservice.seat.infrastructure.messaging;
 
 import com.firstticket.bookingservice.seat.application.SeatCommandService;
 import com.firstticket.bookingservice.seat.infrastructure.messaging.payload.BookingCancelConfirmedPayload;
-import com.firstticket.bookingservice.seat.infrastructure.messaging.payload.ProgramCreatedPayload;
+import com.firstticket.bookingservice.seat.infrastructure.messaging.payload.ScheduleCreatedPayload;
 import com.firstticket.common.json.JsonUtil;
 import com.firstticket.common.messaging.annotation.IdempotentConsumer;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +19,10 @@ public class SeatKafkaConsumer {
 
     private final SeatCommandService seatCommandService;
 
-    @KafkaListener(topics = "program.created")
+    @KafkaListener(topics = "${kafka.topics.schedule-created}")
     @IdempotentConsumer
-    public void consumeProgramCreated(ConsumerRecord<String, String> record, Acknowledgment ack) {
-        ProgramCreatedPayload payload = JsonUtil.fromJson(record.value(), ProgramCreatedPayload.class);
+    public void consumeScheduleCreated(ConsumerRecord<String, String> record, Acknowledgment ack) {
+        ScheduleCreatedPayload payload = JsonUtil.fromJson(record.value(), ScheduleCreatedPayload.class);
         log.info("[SeatKafkaConsumer] 메시지 수신. key={}, value={}", record.key(), payload.toString());
 
         seatCommandService.createSeats(payload.toCommand());
@@ -30,7 +30,7 @@ public class SeatKafkaConsumer {
         ack.acknowledge();
     }
 
-    @KafkaListener(topics = "booking.cancel.confirmed")
+    @KafkaListener(topics = "${kafka.topics.booking-cancel-confirmed}")
     @IdempotentConsumer
     public void consumeBookingCancelConfirmed(ConsumerRecord<String, String> record, Acknowledgment ack) {
         BookingCancelConfirmedPayload payload = JsonUtil.fromJson(record.value(), BookingCancelConfirmedPayload.class);
