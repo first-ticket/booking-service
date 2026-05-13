@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers
-@Disabled("좌석 조회 캐시 타이밍 테스트 - 로컬 캐시 검증용")
+@Disabled("좌석 조회 캐시 테스트 - 로컬 캐시 검증용")
 class SeatCacheTest {
 
     @Container
