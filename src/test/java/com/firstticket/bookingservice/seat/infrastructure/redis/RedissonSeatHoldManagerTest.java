@@ -169,7 +169,8 @@ class RedissonSeatHoldManagerTest {
                 seatHoldManager.hold(seatIds, scheduleId, userId1, sessionId1);
                 successCount.incrementAndGet();
             } catch (SeatException e) {
-                if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED) {
+                if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED
+                    || e.getErrorCode() == SeatErrorCode.SEAT_ALREADY_HELD) {
                     failCount.incrementAndGet();
                 }
             } catch (InterruptedException e) {
@@ -183,7 +184,8 @@ class RedissonSeatHoldManagerTest {
                 seatHoldManager.hold(seatIds, scheduleId, userId2, sessionId2);
                 successCount.incrementAndGet();
             } catch (SeatException e) {
-                if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED) {
+                if (e.getErrorCode() == SeatErrorCode.SEAT_HOLD_FAILED
+                    || e.getErrorCode() == SeatErrorCode.SEAT_ALREADY_HELD) {
                     failCount.incrementAndGet();
                 }
             } catch (InterruptedException e) {
