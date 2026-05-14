@@ -54,8 +54,7 @@ jobs:
   push-to-ecr:
     needs: build-and-test
     if: |
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main')
+      github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
