@@ -45,7 +45,10 @@ booking:
     session-secret: test-session-secret
     session-token-validity: 3600
 
-common:
-  messaging:
+messaging:
+  outbox:
+    enabled: true
     scheduler:
       enabled: false
+  inbox:
+    enabled: true

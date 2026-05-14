@@ -15,7 +15,6 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       EUREKA_SERVER_URL: eureka-server
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
-      COMMON_MESSAGING_SCHEDULER_ENABLED: false
       DB_HOST: first-ticket-postgres
     env_file:
       - .env
