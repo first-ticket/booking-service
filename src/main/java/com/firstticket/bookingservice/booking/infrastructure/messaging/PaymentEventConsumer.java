@@ -20,7 +20,7 @@ public class PaymentEventConsumer {
 
     private final BookingCommandService bookingCommandService;
 
-    @KafkaListener(topics = "payment.completed")
+    @KafkaListener(topics = "${kafka.topics.payment-completed}")
     @IdempotentConsumer
     public void consumePaymentCompleted(ConsumerRecord<String, String> record, Acknowledgment ack){
         try{
@@ -35,7 +35,7 @@ public class PaymentEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "payment.failed")
+    @KafkaListener(topics = "${kafka.topics.payment-failed}")
     @IdempotentConsumer
     public void consumePaymentFailed(ConsumerRecord<String, String> record, Acknowledgment ack){
         try{
@@ -50,7 +50,7 @@ public class PaymentEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "payment.refund.completed")
+    @KafkaListener(topics = "${kafka.topics.payment-refund-completed}")
     @IdempotentConsumer
     public void consumeRefundCompleted(ConsumerRecord<String, String> record, Acknowledgment ack){
         try{

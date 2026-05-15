@@ -17,7 +17,7 @@ public enum BookingStatus {
     private static final Map<BookingStatus, Set<BookingStatus>> TRANSITIONS = Map.of(
         PENDING, Set.of(PAID, CANCELED, CANCEL_REQUESTED),
         PAID, Set.of(CONFIRMED, CANCEL_REQUESTED),
-        CONFIRMED, Set.of(),
+        CONFIRMED, Set.of(CANCEL_REQUESTED),
         CANCEL_REQUESTED, Set.of(CANCELED),
         CANCELED, Set.of()
     );

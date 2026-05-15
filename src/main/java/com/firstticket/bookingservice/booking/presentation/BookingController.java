@@ -49,7 +49,7 @@ public class BookingController {
 
     //예매 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<BookingCreateResponse>> create( //TODO: BookingResponse로 해야함
+    public ResponseEntity<ApiResponse<BookingCreateResponse>> create(
         @RequestBody @Valid CreateBookingRequest request,
         @BookingToken BookingTokenClaims claims,
         @RequestHeader("Booking-Session-Token") String headerSession

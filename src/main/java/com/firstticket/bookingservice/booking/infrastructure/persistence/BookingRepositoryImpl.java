@@ -40,4 +40,19 @@ public class BookingRepositoryImpl implements BookingRepository {
     public UUID findIdBySessionId(String sessionId) {
         return bookingJpaRepository.findIdBySessionId(sessionId).orElseThrow(() -> new EntityNotFoundException("세션에 해당하는 예약 없음"));
     }
+
+    @Override
+    public Optional<Booking> findBySessionId(String sessionId) {
+        return bookingJpaRepository.findBySessionId(sessionId);
+    }
+
+    @Override
+    public void hardDelete(Booking booking) {
+        bookingJpaRepository.delete(booking);
+        bookingJpaRepository.flush();
+        // DELETE SQL 즉시 실행
+        // JPA flush 순서가 INSERT->UPDATE->DELETE 순서로 SQL이 진행된다.
+        // DELETE가 실행되기 전에는 두 레코드가 공존하게되므로
+        // 이때 sessionId에 걸린 unique 제약에 의해 에러가 생기기 때문에 이를 방지하기 위해 flush를 미리 실행한다.
+    }
 }
