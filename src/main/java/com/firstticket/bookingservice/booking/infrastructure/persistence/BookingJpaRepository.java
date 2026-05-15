@@ -14,4 +14,6 @@ public interface BookingJpaRepository extends JpaRepository<Booking, UUID>, JpaS
 
     @Query("SELECT b.id FROM Booking b WHERE b.sessionId = :sessionId")
     Optional<UUID> findIdBySessionId(@Param("sessionId") String sessionId);
+
+    Optional<Booking> findBySessionId(String sessionId);
 }

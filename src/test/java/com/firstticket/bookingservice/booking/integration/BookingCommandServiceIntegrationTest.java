@@ -8,15 +8,16 @@ import static org.mockito.BDDMockito.given;
 
 import com.firstticket.bookingservice.booking.application.BookingCommandService;
 import com.firstticket.bookingservice.booking.application.dto.command.CreateBookingCommand;
+import com.firstticket.bookingservice.booking.application.dto.result.BookingResult;
+import com.firstticket.bookingservice.booking.domain.Booking;
+import com.firstticket.bookingservice.booking.domain.BookingRepository;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
 import com.firstticket.bookingservice.booking.domain.service.ProgramOperator;
 import com.firstticket.bookingservice.booking.domain.service.SeatOperator;
 import com.firstticket.bookingservice.booking.domain.service.vo.HeldSeatResult;
 import com.firstticket.bookingservice.booking.domain.service.vo.PaymentResult;
 import com.firstticket.bookingservice.booking.domain.service.vo.ProgramScheduleResult;
-import com.firstticket.bookingservice.booking.domain.Booking;
-import com.firstticket.bookingservice.booking.domain.BookingRepository;
-import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.redis.testcontainers.RedisContainer;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -117,10 +118,27 @@ class BookingCommandServiceIntegrationTest {
     }
 
     @Test
-    void 동일_세션으로_두번_요청시_예외가_발생한다() {
-        bookingCommandService.create(userId, command, sessionId);
+    void 동일_세션으로_PAID_이후_상태의_예매가_있는_경우_예외가_발생한다() {
+        // 1. 첫 번째 예매 생성 (PENDING)
+        BookingResult firstResult = bookingCommandService.create(userId, command, sessionId);
 
+        // 2. 결제 완료 처리 → CONFIRMED 상태로 전이
+        bookingCommandService.paymentCompleted(firstResult.bookingId(), UUID.randomUUID());
+
+        // 3. 동일 세션으로 재요청 → DUPLICATE_BOOKING 예외
         assertThatThrownBy(() -> bookingCommandService.create(userId, command, sessionId))
             .isInstanceOf(BookingException.class);
+    }
+
+    @Test
+    void 동일_세션으로_PENDING_상태일때_재요청시_기존_예매가_삭제되고_새_예매가_생성된다() {
+        bookingCommandService.create(userId, command, sessionId);
+        UUID firstBookingId = bookingRepository.findIdBySessionId(sessionId);
+
+        bookingCommandService.create(userId, command, sessionId); // 예외 없이 통과
+        UUID secondBookingId = bookingRepository.findIdBySessionId(sessionId);
+
+        assertThat(bookingRepository.findById(firstBookingId)).isEmpty(); // 기존 예매 삭제됨
+        assertThat(secondBookingId).isNotEqualTo(firstBookingId);         // 새 예매 생성됨
     }
 }

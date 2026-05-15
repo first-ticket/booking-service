@@ -3,6 +3,12 @@ package com.firstticket.bookingservice.booking.application;
 import com.firstticket.bookingservice.booking.application.dto.command.CreateBookingCommand;
 import com.firstticket.bookingservice.booking.application.dto.result.BookingResult;
 import com.firstticket.bookingservice.booking.application.lock.DistributedLock;
+import com.firstticket.bookingservice.booking.domain.Booking;
+import com.firstticket.bookingservice.booking.domain.BookingItem;
+import com.firstticket.bookingservice.booking.domain.BookingRepository;
+import com.firstticket.bookingservice.booking.domain.BookingStatus;
+import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
+import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
 import com.firstticket.bookingservice.booking.domain.service.ProgramOperator;
 import com.firstticket.bookingservice.booking.domain.service.PublishEvent;
@@ -10,16 +16,12 @@ import com.firstticket.bookingservice.booking.domain.service.SeatOperator;
 import com.firstticket.bookingservice.booking.domain.service.vo.HeldSeatResult;
 import com.firstticket.bookingservice.booking.domain.service.vo.PaymentResult;
 import com.firstticket.bookingservice.booking.domain.service.vo.ProgramScheduleResult;
-import com.firstticket.bookingservice.booking.domain.Booking;
-import com.firstticket.bookingservice.booking.domain.BookingItem;
-import com.firstticket.bookingservice.booking.domain.BookingRepository;
-import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
-import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.common.exception.BusinessException;
 import com.firstticket.common.web.AuthContext;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -46,8 +48,16 @@ public class BookingCommandService {
     public BookingResult create(UUID userId, CreateBookingCommand command, String sessionId) {
 
         // 순차적 중복 요청 방지 로직
-        if (bookingRepository.isDuplicated(sessionId)) {
-            throw new BookingException(BookingErrorCode.DUPLICATE_BOOKING);
+        Optional<Booking> existedBooking = bookingRepository.findBySessionId(sessionId);
+        if(existedBooking.isPresent()){
+            BookingStatus status = existedBooking.get().getStatus();
+            if(status == BookingStatus.PAID){
+                throw new BookingException(BookingErrorCode.DUPLICATE_BOOKING);
+            } else if(status != BookingStatus.PENDING){
+                throw new BookingException(BookingErrorCode.ALREADY_BOOKED_SESSION);
+            } else {
+                bookingRepository.hardDelete(existedBooking.get());
+            }
         }
 
         // 좌석 서비스 호출 : 좌석 선점 체크 + 가격 정보
