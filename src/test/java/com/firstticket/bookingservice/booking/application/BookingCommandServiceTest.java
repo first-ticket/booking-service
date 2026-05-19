@@ -49,6 +49,7 @@ class BookingCommandServiceTest {
     @Mock private PaymentOperator paymentOperator;
     @Mock private ApplicationEventPublisher applicationEventPublisher;
     @Mock private PublishEvent publishEvent;
+    @Mock private BookingPersistenceService bookingPersistenceService;
 
     private UUID userId;
     private UUID programId;
@@ -81,16 +82,9 @@ class BookingCommandServiceTest {
 
     @Test
     void 중복_세션으로_이미_만들어진_PENDING이후_상태의_예매가_있는_경우_예외가_발생한다() {
-        Booking paidBooking = Booking.create(userId, sessionId, programId, scheduleId,
-            "테스트 공연",
-            LocalDateTime.now().plusDays(10),
-            LocalDateTime.now().plusDays(10).plusHours(2),
-            "올림픽공원", "서울시 송파구",
-            LocalDateTime.now().minusDays(5),
-            LocalDateTime.now().plusDays(5));
-        paidBooking.paid(); // PENDING → PAID 상태로 전이
 
-        given(bookingRepository.findBySessionId(sessionId)).willReturn(Optional.of(paidBooking));
+        willThrow(new BookingException(BookingErrorCode.DUPLICATE_BOOKING))
+            .given(bookingPersistenceService).checkAndDeleteDuplicate(sessionId);
 
         assertThatThrownBy(() -> bookingCommandService.create(userId, command, sessionId))
             .isInstanceOf(BookingException.class);
@@ -119,16 +113,26 @@ class BookingCommandServiceTest {
 
     @Test
     void 정상_흐름에서_예매가_저장되고_BookingResult가_반환된다() {
+
+        Booking booking = Booking.create(userId, sessionId, programId, scheduleId,
+            "테스트 공연",
+            LocalDateTime.now().plusDays(10),
+            LocalDateTime.now().plusDays(10).plusHours(2),
+            "올림픽공원", "서울시 송파구",
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().plusDays(5));
+
         given(seatOperator.getHeldSeats(scheduleId, sessionId)).willReturn(List.of(
             new HeldSeatResult(UUID.randomUUID(), "A구역 1열 1번", 10000L)
         ));
         given(programOperator.validateSchedule(scheduleId)).willReturn(scheduleResult);
         given(paymentOperator.createPayment(any(), eq(userId), eq(10000L)))
             .willReturn(new PaymentResult(UUID.randomUUID(), "order-001", 10000L));
+        given(bookingPersistenceService.saveBooking(any())).willReturn(booking);
 
         BookingResult result = bookingCommandService.create(userId, command, sessionId);
 
-        then(bookingRepository).should().save(any(Booking.class));
+        then(bookingPersistenceService).should().saveBooking(any(Booking.class));
         assertThat(result).isNotNull();
         assertThat(result.programTitle()).isEqualTo("테스트 공연");
     }

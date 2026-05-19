@@ -6,7 +6,6 @@ import com.firstticket.bookingservice.booking.application.lock.DistributedLock;
 import com.firstticket.bookingservice.booking.domain.Booking;
 import com.firstticket.bookingservice.booking.domain.BookingItem;
 import com.firstticket.bookingservice.booking.domain.BookingRepository;
-import com.firstticket.bookingservice.booking.domain.BookingStatus;
 import com.firstticket.bookingservice.booking.domain.exception.BookingErrorCode;
 import com.firstticket.bookingservice.booking.domain.exception.BookingException;
 import com.firstticket.bookingservice.booking.domain.service.PaymentOperator;
@@ -21,15 +20,16 @@ import com.firstticket.common.web.AuthContext;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingCommandService {
 
     private final SeatOperator seatOperator;
@@ -37,6 +37,7 @@ public class BookingCommandService {
     private final BookingRepository bookingRepository;
     private final PaymentOperator paymentOperator;
     private final PublishEvent publishEvent;
+    private final BookingPersistenceService bookingPersistenceService;
 
     // 1. 예매 요청 동시성 제어
     @DistributedLock(
@@ -44,21 +45,9 @@ public class BookingCommandService {
         waitTime = 5, // 락을 기다릴 수 있는 시간
         timeUnit = TimeUnit.SECONDS
     )
-    @Transactional //락을 걸고 트랜잭션을 시작해야함 (순서 중요)
     public BookingResult create(UUID userId, CreateBookingCommand command, String sessionId) {
 
-        // 순차적 중복 요청 방지 로직
-        Optional<Booking> existedBooking = bookingRepository.findBySessionId(sessionId);
-        if(existedBooking.isPresent()){
-            BookingStatus status = existedBooking.get().getStatus();
-            if(status == BookingStatus.PAID){
-                throw new BookingException(BookingErrorCode.DUPLICATE_BOOKING);
-            } else if(status != BookingStatus.PENDING){
-                throw new BookingException(BookingErrorCode.ALREADY_BOOKED_SESSION);
-            } else {
-                bookingRepository.hardDelete(existedBooking.get());
-            }
-        }
+        bookingPersistenceService.checkAndDeleteDuplicate(sessionId); // 기존의 로직을 추출해서 Transactional 걸음 (짧은 트랜잭션)
 
         // 좌석 서비스 호출 : 좌석 선점 체크 + 가격 정보
         seatOperator.validateHold(command.seatList(), userId, sessionId); //예외처리 : seat domain에서 예외가 먼저 처리되기 때문에 여기엔 에러가 안옴
@@ -93,22 +82,32 @@ public class BookingCommandService {
             );
         }
 
-        bookingRepository.save(booking);
+        Booking newBooking = bookingPersistenceService.saveBooking(booking); // 기존의 로직을 메서드로 추출하여 짧은 트랜잭션으로 수정
 
-        // 결제 서비스 결제 요청 feign client 호출
-        PaymentResult paymentResult = paymentOperator.createPayment(booking.getId(), userId, booking.getTotalPrice().getAmount());
+        try{
+            // 결제 서비스 결제 요청 feign client 호출
+            PaymentResult paymentResult = paymentOperator.createPayment(booking.getId(), userId, booking.getTotalPrice().getAmount());
+            // 예매 정보 반환
+            return new BookingResult(
+                booking.getId(),
+                paymentResult.paymentId(),
+                paymentResult.orderId(),
+                newBooking.getProgramTitle(),
+                newBooking.getEventStartAt(),
+                newBooking.getEventEndAt(),
+                paymentResult.amount(),
+                newBooking.getTotalCount()
+            );
 
-        // 예매 정보 반환
-        return new BookingResult(
-            booking.getId(),
-            paymentResult.paymentId(),
-            paymentResult.orderId(),
-            booking.getProgramTitle(),
-            booking.getEventStartAt(),
-            booking.getEventEndAt(),
-            paymentResult.amount(),
-            booking.getTotalCount()
-        );
+        } catch (BusinessException e) {
+            try{
+                // payment 생성 실패 → booking도 정리
+                bookingPersistenceService.deleteBooking(newBooking.getId());
+            } catch (Exception deleteEx) {
+                log.error("결제 실패 후 예매 삭제 실패 - bookingId: {}", newBooking.getId(), deleteEx);
+            }
+            throw e;
+        }
     }
 
     /*
