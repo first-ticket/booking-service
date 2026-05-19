@@ -20,11 +20,10 @@ public class BookingRepositoryImpl implements BookingRepository {
     @Override
     public Booking save(Booking booking) {
         try{
-            bookingJpaRepository.save(booking);
+            return bookingJpaRepository.save(booking);
         }catch (DataIntegrityViolationException e){
             throw new BookingException(BookingErrorCode.DUPLICATE_BOOKING);
         }
-        return booking;
     }
 
     @Override

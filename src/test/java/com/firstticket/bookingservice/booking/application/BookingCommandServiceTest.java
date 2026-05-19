@@ -113,12 +113,22 @@ class BookingCommandServiceTest {
 
     @Test
     void 정상_흐름에서_예매가_저장되고_BookingResult가_반환된다() {
+
+        Booking booking = Booking.create(userId, sessionId, programId, scheduleId,
+            "테스트 공연",
+            LocalDateTime.now().plusDays(10),
+            LocalDateTime.now().plusDays(10).plusHours(2),
+            "올림픽공원", "서울시 송파구",
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().plusDays(5));
+
         given(seatOperator.getHeldSeats(scheduleId, sessionId)).willReturn(List.of(
             new HeldSeatResult(UUID.randomUUID(), "A구역 1열 1번", 10000L)
         ));
         given(programOperator.validateSchedule(scheduleId)).willReturn(scheduleResult);
         given(paymentOperator.createPayment(any(), eq(userId), eq(10000L)))
             .willReturn(new PaymentResult(UUID.randomUUID(), "order-001", 10000L));
+        given(bookingPersistenceService.saveBooking(any())).willReturn(booking);
 
         BookingResult result = bookingCommandService.create(userId, command, sessionId);
 
