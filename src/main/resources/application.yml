@@ -2,12 +2,6 @@ spring:
   application:
     name: booking-service
 
-  datasource:
-    hikari:
-      maximum-pool-size: 30
-      minimum-idle: 10
-      connection-timeout: 6000
-
   config:
     import:
       - "optional:file:.env[.properties]"

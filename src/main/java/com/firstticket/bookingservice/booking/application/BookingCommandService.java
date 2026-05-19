@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingCommandService {
 
     private final SeatOperator seatOperator;
@@ -80,7 +82,7 @@ public class BookingCommandService {
             );
         }
 
-        bookingPersistenceService.saveBooking(booking); // 기존의 로직을 메서드로 추출하여 짧은 트랜잭션으로 수정
+        Booking newBooking = bookingPersistenceService.saveBooking(booking); // 기존의 로직을 메서드로 추출하여 짧은 트랜잭션으로 수정
 
         try{
             // 결제 서비스 결제 요청 feign client 호출
@@ -90,19 +92,22 @@ public class BookingCommandService {
                 booking.getId(),
                 paymentResult.paymentId(),
                 paymentResult.orderId(),
-                booking.getProgramTitle(),
-                booking.getEventStartAt(),
-                booking.getEventEndAt(),
+                newBooking.getProgramTitle(),
+                newBooking.getEventStartAt(),
+                newBooking.getEventEndAt(),
                 paymentResult.amount(),
-                booking.getTotalCount()
+                newBooking.getTotalCount()
             );
 
-        } catch (Exception e) {
-            // payment 생성 실패 → booking도 정리
-            bookingPersistenceService.deleteBooking(booking.getId());
+        } catch (BusinessException e) {
+            try{
+                // payment 생성 실패 → booking도 정리
+                bookingPersistenceService.deleteBooking(newBooking.getId());
+            } catch (Exception deleteEx) {
+                log.error("결제 실패 후 예매 삭제 실패 - bookingId: {}", newBooking.getId(), deleteEx);
+            }
             throw e;
         }
-
     }
 
     /*
