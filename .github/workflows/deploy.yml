@@ -5,10 +5,14 @@ on:
     branches:
       - main
       - dev
+    paths-ignore:
+      - 'README.md'
   push:
     branches:
       - main
       - dev
+    paths-ignore:
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
